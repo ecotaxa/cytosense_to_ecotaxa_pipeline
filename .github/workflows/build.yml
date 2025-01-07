@@ -1,0 +1,51 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-cyz2json:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build cyz2json
+        run: |
+          git clone https://github.com/OBAMANEXT/cyz2json.git
+          cd cyz2json
+          make
+      - name: Upload binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: cyz2json-${{ matrix.os }}
+          path: cyz2json/build/cyz2json*
+
+  build-python-package:
+    needs: build-cyz2json
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+      - uses: actions/download-artifact@v3
+      
+      - name: Install build tools
+        run: pip install build wheel setuptools
+        
+      - name: Build package
+        run: python -m build
+        
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
