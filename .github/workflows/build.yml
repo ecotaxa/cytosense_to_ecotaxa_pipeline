@@ -16,15 +16,18 @@ jobs:
           repository: "ecotaxa/cyz2json"
           latest: true
           fileName: "*"
-          out-file-path: "cytosense_to_ecotaxa_pipeline/bin"
+          out-file-path: "downloads"
       - name: Upload binaries
         uses: actions/upload-artifact@v3
         with:
           name: cyz2json-binaries
-          path: cytosense_to_ecotaxa_pipeline/bin/*
+          path: downloads/*
 
-  build-package:
+  build-packages:
     needs: fetch-cyz2json
+    strategy:
+      matrix:
+        platform: [linux, windows, macos]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -35,18 +38,23 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: cyz2json-binaries
-          path: cytosense_to_ecotaxa_pipeline/bin
+          path: downloads
+      - name: Prepare platform binary
+        run: |
+          mkdir -p cytosense_to_ecotaxa_pipeline/bin
+          cp downloads/cyz2json-${{ matrix.platform }}* cytosense_to_ecotaxa_pipeline/bin/
       - name: Install build tools
         run: pip install build wheel setuptools
       - name: Build package
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
+          PLATFORM: ${{ matrix.platform }}
         run: python -m build
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/*.whl
-            dist/*.tar.gz
+            dist/*-${{ matrix.platform }}.whl
+            dist/*-${{ matrix.platform }}.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
