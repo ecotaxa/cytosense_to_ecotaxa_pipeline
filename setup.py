@@ -1,10 +1,13 @@
 
 
 from setuptools import setup, find_packages
+import os
+
+version = os.environ.get('GITHUB_REF_NAME', 'v1.0.0').replace('v', '')
 
 setup(
     name="cytosense_to_ecotaxa_pipeline",
-    version="1.0.0",
+    version=version,
     packages=find_packages(),
     package_data={
         'cytosense_to_ecotaxa_pipeline': ['bin/cyz2json*'],  # Include all cyz2json binaries
