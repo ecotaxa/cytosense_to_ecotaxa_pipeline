@@ -6,32 +6,26 @@ on:
       - 'v*'
 
 jobs:
-  build-cyz2json:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    
+  fetch-cyz2json:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Build cyz2json
-        run: |
-          git clone https://github.com/OBAMANEXT/cyz2json.git
-          cd cyz2json
-          make
-      - name: Upload binary
-        uses: actions/upload-artifact@v3
+      - name: Download latest cyz2json release
+        uses: robinraju/release-downloader@v1.11
         with:
-          name: cyz2json-${{ matrix.os }}
-          path: cyz2json/build/cyz2json*
+          repository: "ecotaxa/cyz2json"
+          latest: true
+          fileName: "*"
+          out-file-path: "cytosense_to_ecotaxa_pipeline/bin"
 
-  build-python-package:
-    needs: build-cyz2json
+  build-package:
+    needs: fetch-cyz2json
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-      - uses: actions/download-artifact@v3
+        with:
+          python-version: '>=3.6'
       
       - name: Install build tools
         run: pip install build wheel setuptools
@@ -45,7 +39,5 @@ jobs:
           files: |
             dist/*.whl
             dist/*.tar.gz
-          draft: false
-          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
