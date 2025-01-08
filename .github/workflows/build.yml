@@ -27,7 +27,13 @@ jobs:
     needs: fetch-cyz2json
     strategy:
       matrix:
-        platform: [ubuntu, macos, windows]
+        include:
+          - platform: windows
+            binary_path: publish/Cyz2Json.exe
+          - platform: ubuntu
+            binary_path: publish/Cyz2Json
+          - platform: macos
+            binary_path: publish/Cyz2Json
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -42,9 +48,8 @@ jobs:
       - name: Prepare platform binary
         run: |
           mkdir -p cytosense_to_ecotaxa_pipeline/bin
-          cp downloads/cyz2json-${{ matrix.platform }}-latest.zip cytosense_to_ecotaxa_pipeline/bin/
-          cd cytosense_to_ecotaxa_pipeline/bin
-          unzip cyz2json-${{ matrix.platform }}-latest.zip
+          unzip -j "downloads/cyz2json-${{ matrix.platform }}-latest.zip" "${{ matrix.binary_path }}" -d cytosense_to_ecotaxa_pipeline/bin/
+          mv cytosense_to_ecotaxa_pipeline/bin/Cyz2Json* cytosense_to_ecotaxa_pipeline/bin/cyz2json
       - name: Install build tools
         run: pip install build wheel setuptools
       - name: Build package
