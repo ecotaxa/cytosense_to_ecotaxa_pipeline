@@ -29,8 +29,15 @@ jobs:
       
       - name: Install build tools
         run: pip install build wheel setuptools
-        
+
+      - name: Download cyz2json
+        run: |
+          mkdir -p cytosense_to_ecotaxa_pipeline/bin
+          # Download binaries to bin directory
+
       - name: Build package
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
         run: python -m build
         
       - name: Create Release
