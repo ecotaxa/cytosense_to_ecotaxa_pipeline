@@ -1,5 +1,8 @@
 # Cytosense to EcoTaxa Pipeline
 
+#+HTML: <img src="https://github.com/ecotaxa/cytosense_to_ecotaxa_pipeline/actions/workflows/build.yml/badge.svg" alt="Build cytosense_to_ecotaxa_pipeline"/>
+
+
 A pipeline tool to convert Cytosense data files to EcoTaxa compatible format.
 ## Features
 
