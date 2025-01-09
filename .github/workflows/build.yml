@@ -46,10 +46,29 @@ jobs:
           name: cyz2json-binaries
           path: downloads
       - name: Prepare platform binary
+        # Run mkdir -p cytosense_to_ecotaxa_pipeline/bin
+        # -rw-r--r-- 1 runner docker 35149 Jan  9 05:57 LICENSE
+        # -rw-r--r-- 1 runner docker   519 Jan  9 05:57 README.md
+        # -rw-r--r-- 1 runner docker   331 Jan  9 05:57 build.sh
+        # -rw-r--r-- 1 runner docker   527 Jan  9 05:57 install.sh
+        # -rw-r--r-- 1 runner docker    23 Jan  9 05:57 requirements.txt
+        # -rw-r--r-- 1 runner docker   717 Jan  9 05:57 setup.py
+
+        # cytosense_to_ecotaxa_pipeline:
+        # total 20
+        # -rw-r--r-- 1 runner docker     0 Jan  9 05:57 __init__.py
+        # drwxr-xr-x 2 runner docker  4096 Jan  9 05:57 bin
+        # -rw-r--r-- 1 runner docker 16142 Jan  9 05:57 main.py
+
+        # downloads:
+        # total 466416
+        # -rw-r--r-- 1 runner docker 122084464 Jan  9 05:57 cyz2json-macos-latest.zip
+        # -rw-r--r-- 1 runner docker 124113822 Jan  9 05:57 cyz2json-ubuntu-latest.zip
+        # -rw-r--r-- 1 runner docker 231407117 Jan  9 05:57 cyz2json-windows-latest.zip
         run: |
           mkdir -p cytosense_to_ecotaxa_pipeline/bin
-          ls -l *
-          unzip -j "downloads/v0.0.38/cyz2json-${{ matrix.platform }}-latest" "${{ matrix.binary_path }}" -d cytosense_to_ecotaxa_pipeline/bin/
+          # ls -l *
+          unzip -j "downloads/cyz2json-${{ matrix.platform }}-latest" "${{ matrix.binary_path }}" -d cytosense_to_ecotaxa_pipeline/bin/
           mv cytosense_to_ecotaxa_pipeline/bin/Cyz2Json* cytosense_to_ecotaxa_pipeline/bin/cyz2json
       - name: Install build tools
         run: pip install build wheel setuptools
