@@ -72,8 +72,9 @@ jobs:
           # mv cytosense_to_ecotaxa_pipeline/bin/Cyz2Json* cytosense_to_ecotaxa_pipeline/bin/cyz2json
 
       - name: List files
-        run: 
-            ls -l *
+        run: |
+            ls  -l * bin/*
+            echo ${{ matrix.platform }}
 
       - name: Install build tools
         run: pip install build wheel setuptools
@@ -87,13 +88,13 @@ jobs:
       - name: List files
         run: 
           ls -l *
-          ls -l dist/*
+          # ls -l dist/*
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/*-${{ matrix.platform }}.whl
-            dist/*-${{ matrix.platform }}.tar.gz
+            dist/*.whl
+            dist/*.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
