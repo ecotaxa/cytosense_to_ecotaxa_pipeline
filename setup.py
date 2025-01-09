@@ -3,10 +3,11 @@
 from setuptools import setup, find_packages
 import os
 
+platform = os.getenv('PLATFORM', 'unknown')
 version = os.environ.get('GITHUB_REF_NAME', 'v1.0.0').replace('v', '')
 
 setup(
-    name="cytosense_to_ecotaxa_pipeline",
+    name=f'cytosense_to_ecotaxa_pipeline-{platform}',
     version=version,
     packages=find_packages(),
     package_data={
