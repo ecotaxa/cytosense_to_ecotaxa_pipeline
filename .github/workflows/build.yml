@@ -29,11 +29,11 @@ jobs:
       matrix:
         include:
           - platform: windows
-            binary_path: publish/Cyz2Json.exe
+            binary_path: publish/cyz2Json.exe
           - platform: ubuntu
-            binary_path: publish/Cyz2Json
+            binary_path: publish/cyz2Json
           - platform: macos
-            binary_path: publish/Cyz2Json
+            binary_path: publish/cyz2Json
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
