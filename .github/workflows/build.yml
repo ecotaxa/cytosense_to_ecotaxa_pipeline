@@ -48,7 +48,7 @@ jobs:
       - name: Prepare platform binary
         run: |
           mkdir -p cytosense_to_ecotaxa_pipeline/bin
-          unzip -j "downloads/cyz2json-${{ matrix.platform }}-latest.zip" "${{ matrix.binary_path }}" -d cytosense_to_ecotaxa_pipeline/bin/
+          unzip -j "downloads/v0.0.38/cyz2json-${{ matrix.platform }}-latest.zip" "${{ matrix.binary_path }}" -d cytosense_to_ecotaxa_pipeline/bin/
           mv cytosense_to_ecotaxa_pipeline/bin/Cyz2Json* cytosense_to_ecotaxa_pipeline/bin/cyz2json
       - name: Install build tools
         run: pip install build wheel setuptools
