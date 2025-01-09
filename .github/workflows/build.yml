@@ -73,7 +73,7 @@ jobs:
 
       - name: List files
         run: |
-            ls  -l * bin/*
+            ls  -l * cytosense_to_ecotaxa_pipeline/bin/*
             echo ${{ matrix.platform }}
 
       - name: Install build tools
