@@ -67,8 +67,8 @@ jobs:
         # -rw-r--r-- 1 runner docker 231407117 Jan  9 05:57 cyz2json-windows-latest.zip
         run: |
           mkdir -p cytosense_to_ecotaxa_pipeline/bin
-          # ls -l *
-          unzip -j "downloads/cyz2json-${{ matrix.platform }}-latest" -d cytosense_to_ecotaxa_pipeline/bin/
+          ls -l *
+          unzip -o "downloads/cyz2json-${{ matrix.platform }}-latest" -d cytosense_to_ecotaxa_pipeline/bin/
           # mv cytosense_to_ecotaxa_pipeline/bin/Cyz2Json* cytosense_to_ecotaxa_pipeline/bin/cyz2json
           ls -l *
 
