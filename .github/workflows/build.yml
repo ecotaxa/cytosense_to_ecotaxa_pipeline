@@ -18,7 +18,7 @@ jobs:
           fileName: "*"
           out-file-path: "downloads"
       - name: Upload binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cyz2json-binaries
           path: downloads/*
@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: '>=3.6'
       - name: Download binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cyz2json-binaries
           path: downloads
