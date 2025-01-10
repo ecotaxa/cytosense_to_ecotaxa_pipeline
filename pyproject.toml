@@ -18,4 +18,4 @@ dependencies = [
 
 [tool.setuptools]
 packages = ["cytosense_to_ecotaxa_pipeline"]
-package-dir = {"": "src"}
+package-dir = {""= "src"}
