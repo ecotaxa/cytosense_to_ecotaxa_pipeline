@@ -31,15 +31,19 @@ jobs:
           - platform: windows
             platform_tag: win_amd64
             binary_ext: ".exe"
+            cyz2json_platform: windows
           - platform: ubuntu
             platform_tag: linux_x86_64
             binary_ext: ""
-          - platform: macos
-            platform_tag: macosx_10_9_x86_64
-            binary_ext: ""
-          - platform: macos-arm64
+            cyz2json_platform: ubuntu
+          - platform: macos-universal
             platform_tag: macosx_11_0_arm64
             binary_ext: ""
+            cyz2json_platform: macos
+          - platform: macos-universal
+            platform_tag: macosx_10_9_x86_64
+            binary_ext: ""
+            cyz2json_platform: macos
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -56,7 +60,7 @@ jobs:
       - name: Prepare platform binary
         run: |
           mkdir -p src/cytosense_to_ecotaxa_pipeline/bin
-          unzip -o "downloads/cyz2json-${{ matrix.platform }}-latest.zip" -d temp/
+          unzip -o "downloads/cyz2json-${{ matrix.cyz2json_platform }}-latest.zip" -d temp/
           cp -r temp/* src/cytosense_to_ecotaxa_pipeline/bin/
           if [ -f src/cytosense_to_ecotaxa_pipeline/bin/cyz2Json${{ matrix.binary_ext }} ]; then
             chmod +x src/cytosense_to_ecotaxa_pipeline/bin/cyz2Json${{ matrix.binary_ext }}

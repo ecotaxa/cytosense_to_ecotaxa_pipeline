@@ -39,6 +39,7 @@ if [[ "$1" == "--github" ]]; then
   WHEEL_URL="https://github.com/ecotaxa/cytosense_to_ecotaxa_pipeline/releases/download/${LATEST_TAG}/${WHEEL_FILE_NAME}"
 
   echo "System architecture: $ARCH"
+  echo "Using platform tag: $PLATFORM_TAG"
   echo "Latest tag: $LATEST_TAG"
   echo "Tag without 'v': $TAG_WITHOUT_V"
   echo "Wheel file name: $WHEEL_FILE_NAME"
@@ -99,6 +100,12 @@ sudo python3 -m venv /opt/cytosense_to_ecotaxa_pipeline_venv
 # Install the wheel
 echo "Installing wheel file: $WHEEL_FILE"
 sudo /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pip install "$WHEEL_FILE"
+
+# Check installation status
+if [ $? -ne 0 ]; then
+    echo "Installation failed!"
+    exit 1
+fi
 
 # Install execution script
 echo "Creating launcher script..."
