@@ -19,5 +19,3 @@ dependencies = [
     'six',
     'matplotlib',
 ]
-[tool.setuptools]
-packages = ["cytosense_to_ecotaxa_pipeline"]  # Specify your package again
