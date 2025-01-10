@@ -1,21 +1,21 @@
 [build-system]
-requires = ["setuptools>=64.0"]  # Build dependencies
-build-backend = "setuptools.build_meta" # The backend used for building
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
-name = "cytosense_to_ecotaxa_pipeline"  # Your project name
-version = "0.0.25" # Your project version
+name = "cytosense_to_ecotaxa_pipeline"
+version = "0.0.25"
 description = "A pipeline to import Cytosense data into Ecotaxa"
 authors = [{name = "Sebastien Galvagno", email = "sebastien.galvagno@imev-mer.fr"}]
-packages = ["cytosense_to_ecotaxa_pipeline"]  # List your package(s) here
-package-dir = {""= "src"}  # VERY IMPORTANT: Tells setuptools where your source code is located.
-# Add other metadata as needed (license, keywords, etc.)
-requires-python = ">=3.7"  # Specify your minimum Python version
+requires-python = ">=3.7"
 classifiers = [
     # Add appropriate classifiers
 ]
 dependencies = [
-    # List your project's runtime dependencies
     'six',
     'matplotlib',
 ]
+
+[tool.setuptools]
+packages = ["cytosense_to_ecotaxa_pipeline"]
+package-dir = {"": "src"}
