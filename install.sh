@@ -4,13 +4,13 @@
 OS=$(uname -s)
 ARCH=$(uname -m)
 
-# Determine correct wheel file based on OS
+# Determine correct platform tag based on OS
 case "$OS" in
   Darwin)
-    OS_NAME="macos"
+    PLATFORM_TAG="macosx_10_9_x86_64"
     ;;
   Linux)
-    OS_NAME="ubuntu"  # Or determine the specific distro if needed
+    PLATFORM_TAG="linux_x86_64"
     ;;
   *)
     echo "Unsupported operating system: $OS"
@@ -27,82 +27,77 @@ if [[ -z "$LATEST_TAG" ]]; then
 fi
 
 # Remove the "v" prefix if it exists
-TAG_WITHOUT_V="${LATEST_TAG#v}" # This is parameter expansion to remove the leading "v"
-
+TAG_WITHOUT_V="${LATEST_TAG#v}"
 
 # Check for --github flag
 if [[ "$1" == "--github" ]]; then
-
-
-  WHEEL_FILE_NAME="cytosense_to_ecotaxa_pipeline_${OS_NAME}-${TAG_WITHOUT_V}-py3-none-any.whl"
+  # New wheel naming format matching GitHub Actions build
+  WHEEL_FILE_NAME="cytosense_to_ecotaxa_pipeline-${TAG_WITHOUT_V}-py3-none-${PLATFORM_TAG}.whl"
   WHEEL_URL="https://github.com/ecotaxa/cytosense_to_ecotaxa_pipeline/releases/download/${LATEST_TAG}/${WHEEL_FILE_NAME}"
 
-echo "Latest tag: $LATEST_TAG"
-echo "Tag without 'v': $TAG_WITHOUT_V"
-echo "Wheel file name: $WHEEL_FILE_NAME"
-echo "Wheel URL: $WHEEL_URL"
-echo "debug    : https://github.com/ecotaxa/cytosense_to_ecotaxa_pipeline/releases/download/v0.0.24/cytosense_to_ecotaxa_pipeline_macos-0.0.24-py3-none-any.whl"
+  echo "Latest tag: $LATEST_TAG"
+  echo "Tag without 'v': $TAG_WITHOUT_V"
+  echo "Wheel file name: $WHEEL_FILE_NAME"
+  echo "Wheel URL: $WHEEL_URL"
 
-echo curl -s -L "$WHEEL_URL" -o "/tmp/$(basename "$WHEEL_URL")"
+  # Download the wheel file
+  WHEEL_FILE="/tmp/${WHEEL_FILE_NAME}"
+  echo "Downloading wheel from: $WHEEL_URL"
+  if ! curl -s -L "$WHEEL_URL" -o "$WHEEL_FILE"; then
+    echo "Error downloading wheel file. Exiting."
+    exit 1
+  fi
 
-#   WHEEL_FILE=$(curl -s -L "$WHEEL_URL" -o "/tmp/$(basename "$WHEEL_URL")")
-  # Download the file and store the *path* in WHEEL_FILE
-  WHEEL_FILE="/tmp/$(basename "$WHEEL_URL")"  # Construct the full path
-  curl -s -L "$WHEEL_URL" -o "$WHEEL_FILE"    # Download to the specified path
+  if [[ ! -f "$WHEEL_FILE" ]]; then
+    echo "Downloaded file not found: $WHEEL_FILE"
+    exit 1
+  fi
+
+  # Verify the file is actually a wheel
+  if ! unzip -l "$WHEEL_FILE" >/dev/null 2>&1; then
+    echo "Error: Downloaded file is not a valid wheel file"
+    exit 1
+  fi
+
   echo "Downloaded wheel file: $WHEEL_FILE"
 
-  if [[ -f "$WHEEL_FILE" ]]; then
-    echo "Downloaded wheel file from GitHub: $WHEEL_FILE"
-
-    # Check if running on macOS
-    if [[ $(uname) == "Darwin" ]]; then
-        if [[ -d "/Users/sebastiengalvagno/Downloads" && -f "/Users/sebastiengalvagno/Downloads/cytosense_to_ecotaxa_pipeline_${OS_NAME}-${TAG_WITHOUT_V}-py3-none-any.whl" ]] ; then
-            xattr -d com.apple.quarantine /Users/sebastiengalvagno/Downloads/cytosense_to_ecotaxa_pipeline_${OS_NAME}-${TAG_WITHOUT_V}-py3-none-any.whl
-            echo "Removed quarantine attribute on macOS."
-        elif [[ -f "cytosense_to_ecotaxa_pipeline_${OS_NAME}-${TAG_WITHOUT_V}-py3-none-any.whl" ]]; then  #Local build
-                xattr -d com.apple.quarantine cytosense_to_ecotaxa_pipeline_${OS_NAME}-${TAG_WITHOUT_V}-py3-none-any.whl
-                echo "Removed quarantine attribute on macOS from local directory."
-        fi
+  # Remove quarantine on macOS
+  if [[ "$OS" == "Darwin" ]]; then
+    if [[ -f "$WHEEL_FILE" ]]; then
+      xattr -d com.apple.quarantine "$WHEEL_FILE" 2>/dev/null || true
+      echo "Removed quarantine attribute on macOS (if present)."
     fi
-
-  else
-    echo "Error downloading wheel file from GitHub. Exiting."
-    exit 1
   fi
 
 elif [[ "$1" == "--local" || -z "$1" ]]; then
   # Install from local dist directory
-  WHEEL_FILE=$(ls dist/*.whl)
+  WHEEL_FILE=$(ls dist/*.whl 2>/dev/null | head -n 1)
 
-    # Check if running on macOS (place this *after* getting the wheel file)
-    if [[ $(uname) == "Darwin" ]]; then
-        if [[ -f "$WHEEL_FILE" ]]; then  #Local build
-                xattr -d com.apple.quarantine "$WHEEL_FILE"
-                echo "Removed quarantine attribute on macOS from local directory."
-        fi
-    fi
-
-
-  # Check if WHEEL_FILE is empty
   if [[ -z "$WHEEL_FILE" ]]; then
     echo "No wheel file found in dist/. Exiting."
     exit 1
+  fi
+
+  # Remove quarantine on macOS
+  if [[ "$OS" == "Darwin" && -f "$WHEEL_FILE" ]]; then
+    xattr -d com.apple.quarantine "$WHEEL_FILE" 2>/dev/null || true
+    echo "Removed quarantine attribute on macOS (if present)."
   fi
 else
   echo "Invalid argument. Use --github or --local."
   exit 1
 fi
 
-
 # Create system-wide virtual environment
+echo "Creating virtual environment..."
 sudo python3 -m venv /opt/cytosense_to_ecotaxa_pipeline_venv
 
 # Install the wheel
+echo "Installing wheel file: $WHEEL_FILE"
 sudo /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pip install "$WHEEL_FILE"
 
-
-
 # Install execution script
+echo "Creating launcher script..."
 sudo tee /usr/local/bin/cytosense_to_ecotaxa_pipeline << 'EOF'
 #!/bin/bash
 source /opt/cytosense_to_ecotaxa_pipeline_venv/bin/activate
@@ -112,3 +107,4 @@ EOF
 
 sudo chmod +x /usr/local/bin/cytosense_to_ecotaxa_pipeline
 
+echo "Installation completed successfully!"
