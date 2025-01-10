@@ -35,3 +35,18 @@ to bypass security with xattr command, then need to go in Systems Settings > Sec
 
 xattr -d com.apple.quarantine  /Users/sebastiengalvagno/Downloads/cytosense_to_ecotaxa_pipeline_macos-0.0.24/cytosense_to_ecotaxa_pipeline/bin/*
 
+
+# Run the pipeline
+
+```bash
+/usr/local/bin/cytosense_to_ecotaxa_pipeline Deployment\ 1\ 2024-07-18\ 21h12.cyz --output Deployment\ 1\ 2024-07-18\ 21h12.json
+```
+
+# Uninstall
+
+```bash
+sudo ./uninstall.sh
+```
+
+on Windows use uninstall.ps1 instead of uninstall.sh
+
