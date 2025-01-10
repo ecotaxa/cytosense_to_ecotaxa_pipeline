@@ -30,16 +30,19 @@ jobs:
         include:
           - platform: windows
             platform_tag: win_amd64
+            binary_ext: ".exe"
           - platform: ubuntu
             platform_tag: linux_x86_64
+            binary_ext: ""
           - platform: macos
             platform_tag: macosx_10_9_x86_64
+            binary_ext: ""
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
         with:
-          python-version: '3.8'  # Specify exact version
+          python-version: '3.8'
       
       - name: Download binaries
         uses: actions/download-artifact@v4
@@ -50,13 +53,13 @@ jobs:
       - name: Prepare platform binary
         run: |
           mkdir -p src/cytosense_to_ecotaxa_pipeline/bin
-          unzip -o "downloads/cyz2json-${{ matrix.platform }}-latest.zip" -d src/cytosense_to_ecotaxa_pipeline/bin/
-          if [ "${{ matrix.platform }}" = "windows" ]; then
-            mv src/cytosense_to_ecotaxa_pipeline/bin/publish/cyz2Json.exe src/cytosense_to_ecotaxa_pipeline/bin/cyz2json.exe
-          else
-            mv src/cytosense_to_ecotaxa_pipeline/bin/publish/cyz2Json src/cytosense_to_ecotaxa_pipeline/bin/cyz2json
+          unzip -o "downloads/cyz2json-${{ matrix.platform }}-latest.zip" -d temp/
+          # Copy all necessary files from temp to bin directory
+          cp -r temp/* src/cytosense_to_ecotaxa_pipeline/bin/
+          # Make binaries executable
+          if [ -f src/cytosense_to_ecotaxa_pipeline/bin/cyz2Json${{ matrix.binary_ext }} ]; then
+            chmod +x src/cytosense_to_ecotaxa_pipeline/bin/cyz2Json${{ matrix.binary_ext }}
           fi
-          chmod +x src/cytosense_to_ecotaxa_pipeline/bin/cyz2json*
 
       - name: Install build tools
         run: |
@@ -73,6 +76,11 @@ jobs:
             new_name=$(echo $whl | sed "s/-any.whl/-${PLATFORM_TAG}.whl/")
             mv "$whl" "$new_name"
           done
+
+      - name: List package contents
+        run: |
+          echo "Package contents:"
+          unzip -l dist/*.whl
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
