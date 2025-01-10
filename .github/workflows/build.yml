@@ -29,73 +29,55 @@ jobs:
       matrix:
         include:
           - platform: windows
-            binary_path: publish/cyz2Json.exe
+            platform_tag: win_amd64
           - platform: ubuntu
-            binary_path: publish/cyz2Json
+            platform_tag: linux_x86_64
           - platform: macos
-            binary_path: publish/cyz2Json
+            platform_tag: macosx_10_9_x86_64
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
         with:
-          python-version: '>=3.6'
+          python-version: '3.8'  # Specify exact version
+      
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
           name: cyz2json-binaries
           path: downloads
+
       - name: Prepare platform binary
-        # Run mkdir -p cytosense_to_ecotaxa_pipeline/bin
-        # -rw-r--r-- 1 runner docker 35149 Jan  9 05:57 LICENSE
-        # -rw-r--r-- 1 runner docker   519 Jan  9 05:57 README.md
-        # -rw-r--r-- 1 runner docker   331 Jan  9 05:57 build.sh
-        # -rw-r--r-- 1 runner docker   527 Jan  9 05:57 install.sh
-        # -rw-r--r-- 1 runner docker    23 Jan  9 05:57 requirements.txt
-        # -rw-r--r-- 1 runner docker   717 Jan  9 05:57 setup.py
-
-        # cytosense_to_ecotaxa_pipeline:
-        # total 20
-        # -rw-r--r-- 1 runner docker     0 Jan  9 05:57 __init__.py
-        # drwxr-xr-x 2 runner docker  4096 Jan  9 05:57 bin
-        # -rw-r--r-- 1 runner docker 16142 Jan  9 05:57 main.py
-
-        # downloads:
-        # total 466416
-        # -rw-r--r-- 1 runner docker 122084464 Jan  9 05:57 cyz2json-macos-latest.zip
-        # -rw-r--r-- 1 runner docker 124113822 Jan  9 05:57 cyz2json-ubuntu-latest.zip
-        # -rw-r--r-- 1 runner docker 231407117 Jan  9 05:57 cyz2json-windows-latest.zip
         run: |
-          mkdir -p cytosense_to_ecotaxa_pipeline/bin
-          ls -l *
-          unzip -o "downloads/cyz2json-${{ matrix.platform }}-latest" -d cytosense_to_ecotaxa_pipeline/bin/
-          # mv cytosense_to_ecotaxa_pipeline/bin/Cyz2Json* cytosense_to_ecotaxa_pipeline/bin/cyz2json
-
-      - name: List files
-        run: |
-            ls  -l *
-            ls -l cytosense_to_ecotaxa_pipeline/bin/*
-            echo ${{ matrix.platform }}
+          mkdir -p src/cytosense_to_ecotaxa_pipeline/bin
+          unzip -o "downloads/cyz2json-${{ matrix.platform }}-latest.zip" -d src/cytosense_to_ecotaxa_pipeline/bin/
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            mv src/cytosense_to_ecotaxa_pipeline/bin/publish/cyz2Json.exe src/cytosense_to_ecotaxa_pipeline/bin/cyz2json.exe
+          else
+            mv src/cytosense_to_ecotaxa_pipeline/bin/publish/cyz2Json src/cytosense_to_ecotaxa_pipeline/bin/cyz2json
+          fi
+          chmod +x src/cytosense_to_ecotaxa_pipeline/bin/cyz2json*
 
       - name: Install build tools
-        run: pip install build wheel setuptools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools setuptools-scm
 
       - name: Build package
         env:
-          GITHUB_REF_NAME: ${{ github.ref_name }}
-          PLATFORM: ${{ matrix.platform }}
-        run: python -m build
-
-      - name: List files
-        run: 
-          ls -l *
-          # ls -l dist/*
+          PLATFORM_TAG: ${{ matrix.platform_tag }}
+        run: |
+          python -m build --wheel
+          # Rename wheel with correct platform tag
+          for whl in dist/*.whl; do
+            new_name=$(echo $whl | sed "s/-any.whl/-${PLATFORM_TAG}.whl/")
+            mv "$whl" "$new_name"
+          done
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             dist/*.whl
-            dist/*.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
