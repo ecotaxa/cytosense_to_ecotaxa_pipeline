@@ -37,6 +37,9 @@ jobs:
           - platform: macos
             platform_tag: macosx_10_9_x86_64
             binary_ext: ""
+          - platform: macos-arm64
+            platform_tag: macosx_11_0_arm64
+            binary_ext: ""
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -54,9 +57,7 @@ jobs:
         run: |
           mkdir -p src/cytosense_to_ecotaxa_pipeline/bin
           unzip -o "downloads/cyz2json-${{ matrix.platform }}-latest.zip" -d temp/
-          # Copy all necessary files from temp to bin directory
           cp -r temp/* src/cytosense_to_ecotaxa_pipeline/bin/
-          # Make binaries executable
           if [ -f src/cytosense_to_ecotaxa_pipeline/bin/cyz2Json${{ matrix.binary_ext }} ]; then
             chmod +x src/cytosense_to_ecotaxa_pipeline/bin/cyz2Json${{ matrix.binary_ext }}
           fi
@@ -71,16 +72,10 @@ jobs:
           PLATFORM_TAG: ${{ matrix.platform_tag }}
         run: |
           python -m build --wheel
-          # Rename wheel with correct platform tag
           for whl in dist/*.whl; do
             new_name=$(echo $whl | sed "s/-any.whl/-${PLATFORM_TAG}.whl/")
             mv "$whl" "$new_name"
           done
-
-      - name: List package contents
-        run: |
-          echo "Package contents:"
-          unzip -l dist/*.whl
 
       - name: Create Release
         uses: softprops/action-gh-release@v1

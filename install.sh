@@ -4,10 +4,14 @@
 OS=$(uname -s)
 ARCH=$(uname -m)
 
-# Determine correct platform tag based on OS
+# Determine correct platform tag based on OS and architecture
 case "$OS" in
   Darwin)
-    PLATFORM_TAG="macosx_10_9_x86_64"
+    if [[ "$ARCH" == "arm64" ]]; then
+      PLATFORM_TAG="macosx_11_0_arm64"
+    else
+      PLATFORM_TAG="macosx_10_9_x86_64"
+    fi
     ;;
   Linux)
     PLATFORM_TAG="linux_x86_64"
@@ -31,10 +35,10 @@ TAG_WITHOUT_V="${LATEST_TAG#v}"
 
 # Check for --github flag
 if [[ "$1" == "--github" ]]; then
-  # New wheel naming format matching GitHub Actions build
   WHEEL_FILE_NAME="cytosense_to_ecotaxa_pipeline-${TAG_WITHOUT_V}-py3-none-${PLATFORM_TAG}.whl"
   WHEEL_URL="https://github.com/ecotaxa/cytosense_to_ecotaxa_pipeline/releases/download/${LATEST_TAG}/${WHEEL_FILE_NAME}"
 
+  echo "System architecture: $ARCH"
   echo "Latest tag: $LATEST_TAG"
   echo "Tag without 'v': $TAG_WITHOUT_V"
   echo "Wheel file name: $WHEEL_FILE_NAME"
