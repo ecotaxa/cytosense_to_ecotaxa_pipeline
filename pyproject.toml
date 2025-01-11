@@ -17,7 +17,7 @@ dependencies = [
     'matplotlib',
 ]
 entry_points={
-    'console_scripts': [
+    'console_scripts'= [
         'cytosense_to_ecotaxa_pipeline=cytosense_to_ecotaxa_pipeline.pipeline:main_cli',
     ],
 }
