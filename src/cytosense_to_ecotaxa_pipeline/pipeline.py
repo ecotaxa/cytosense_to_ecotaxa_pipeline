@@ -2,25 +2,19 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-import importlib.util
+import json
 
 def get_cyz2json_path():
     """Get the platform-specific path to cyz2json binary"""
-    # Get the directory where the package is installed
     package_dir = Path(__file__).parent
     bin_dir = package_dir / "bin"
     
-    # Check for platform-specific binary name
-    if sys.platform == "win32":
-        binary_name = "cyz2Json.exe"
-    else:
-        binary_name = "cyz2Json"
-    
+    binary_name = "cyz2Json.exe" if sys.platform == "win32" else "cyz2Json"
     binary_path = bin_dir / binary_name
+    
     if not binary_path.exists():
         raise FileNotFoundError(f"Could not find cyz2json binary at {binary_path}")
     
-    # Ensure the binary is executable on Unix-like systems
     if sys.platform != "win32":
         binary_path.chmod(0o755)
     
@@ -48,6 +42,35 @@ def run_cyz2json(input_file):
         print(f"Error running cyz2json: {e.stderr}", file=sys.stderr)
         sys.exit(1)
 
+def create_default_extra_data(input_file):
+    """
+    Create a default extra_data.json file if none exists
+    
+    Args:
+        input_file (Path): Path to the input .cyz file
+    Returns:
+        Path: Path to the extra data JSON file
+    """
+    extra_data = {
+        "cruise": "",
+        "ship": "",
+        "station": "",
+        "bottle": "",
+        "latitude": "",
+        "longitude": "",
+        "depth": ""
+    }
+    
+    extra_data_file = input_file.with_name('extra_data.json')
+    if not extra_data_file.exists():
+        with open(extra_data_file, 'w') as f:
+            json.dump(extra_data, f, indent=2)
+        print(f"Created default extra_data.json at {extra_data_file}")
+        print("Please edit this file with your metadata before processing.")
+        sys.exit(0)
+    
+    return extra_data_file
+
 def process_file(input_file):
     """
     Process a cytosense file through cyz2json and main.py
@@ -67,12 +90,15 @@ def process_file(input_file):
     # Convert cyz to json
     json_file = run_cyz2json(input_path)
     
+    # Get or create extra_data.json
+    extra_data_file = create_default_extra_data(input_path)
+    
     # Import and run main
     try:
         from . import main
-        main.process_file(str(json_file))
-    except ImportError:
-        print("Error: Could not import main module", file=sys.stderr)
+        main.main(str(json_file), str(extra_data_file))
+    except ImportError as e:
+        print(f"Error: Could not import main module: {e}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
         print(f"Error running main.py: {e}", file=sys.stderr)
