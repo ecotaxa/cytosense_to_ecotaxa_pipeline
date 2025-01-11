@@ -3,6 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 import json
+import shutil
 
 def get_cyz2json_path():
     """Get the platform-specific path to cyz2json binary"""
@@ -93,14 +94,18 @@ def process_file(input_file):
     # Get or create extra_data.json
     extra_data_file = create_default_extra_data(input_path)
     
-    # Import and run main
-    try:
-        from . import main
-        main.main(str(json_file), str(extra_data_file))
-    except ImportError as e:
-        print(f"Error: Could not import main module: {e}", file=sys.stderr)
+    # Run main.py from the virtual environment
+    venv_python = Path(sys.executable).parent
+    main_script = venv_python / 'main.py'
+    
+    if not main_script.exists():
+        print(f"Error: main.py not found in {venv_python}", file=sys.stderr)
         sys.exit(1)
-    except Exception as e:
+    
+    try:
+        subprocess.run([sys.executable, str(main_script), str(json_file), '--extra', str(extra_data_file)],
+                      check=True)
+    except subprocess.CalledProcessError as e:
         print(f"Error running main.py: {e}", file=sys.stderr)
         sys.exit(1)
 
