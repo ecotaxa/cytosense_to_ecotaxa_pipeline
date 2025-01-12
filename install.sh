@@ -95,12 +95,12 @@ fi
 
 # Create system-wide virtual environment
 echo "Creating virtual environment..."
+echo "in system folder with sudo command, then you need to type your password"
 sudo python3 -m venv /opt/cytosense_to_ecotaxa_pipeline_venv
 
 # Install the wheel
 echo "Installing wheel file: $WHEEL_FILE"
 sudo /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pip install "$WHEEL_FILE"
-
 # Check installation status
 if [ $? -ne 0 ]; then
     echo "Installation failed!"
