@@ -123,22 +123,27 @@ def main_cli():
         print("Usage: cytosense_to_ecotaxa_pipeline <input_cyz_file> --extra <extra_data>") # --output <output_data>")
         sys.exit(1)
 
-        local_path = os.getcwd()
-        print("local_path")
+    local_path = os.getcwd()
+    print("local_path")
 
-        input_file = sys.argv[1]
-        if not is_absolute(input_file):
-            input_file = os.path.abspath(input_file)
+    input_file = sys.argv[1]
+    if not is_absolute(input_file):
+        input_file = os.path.abspath(input_file)
+    print("input_file:",input_file)
 
-        extra_file = sys.argv[2]
-        if not is_absolute(extra_file):
-            extra_file = os.path.abspath(extra_file)
+    # extra_file")
 
-        # output_file 
-        print("Your files have been generated in:", local_path)
+    extra_file = sys.argv[2]
+    if not is_absolute(extra_file):
+        extra_file = os.path.abspath(extra_file)
+    print("extra_file:",extra_file)
 
-    process_file(sys.argv[1],sys.argv[2]) #,sys.argv[3])
+
+    # output_file 
+
+    # process_file(sys.argv[1],sys.argv[2]) #,sys.argv[3])
     process_file(input_file, extra_file) #, output_file)
+    print("Your files have been generated in:", local_path)
 
 if __name__ == "__main__":
     main_cli()
