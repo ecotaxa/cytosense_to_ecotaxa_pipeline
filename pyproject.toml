@@ -9,12 +9,12 @@ description = "A pipeline to import Cytosense data into Ecotaxa"
 authors = [{name = "Sebastien Galvagno", email = "sebastien.galvagno@imev-mer.fr"}]
 requires-python = ">=3.7"
 classifiers = [
-  "Programming Language :: Python :: 3",
-  "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
 ]
 dependencies = [
-  'six',
-  'matplotlib',
+    'six',
+    'matplotlib',
 ]
 
 [project.scripts]
@@ -22,6 +22,12 @@ cytosense_to_ecotaxa_pipeline = "cytosense_to_ecotaxa_pipeline.pipeline:main_cli
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = find_packages(where="src")
+packages = ["cytosense_to_ecotaxa_pipeline"]
+
+[tool.setuptools.package-data]
+"cytosense_to_ecotaxa_pipeline" = [
+    "bin/*",
+    "*.py"
+]
 
 [tool.setuptools_scm]
