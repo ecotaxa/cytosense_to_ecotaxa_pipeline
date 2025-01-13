@@ -82,6 +82,10 @@ def transform_column_name(name):
 
 def main(input_json, extra_data_file):
     # Charger les fichiers JSON
+
+    print("open:", input_json)
+    print("extra:", extra_data_file)
+
     with open(input_json, "r") as f:
         data = json.load(f)
 
@@ -91,7 +95,9 @@ def main(input_json, extra_data_file):
     output_images_dir = "images"
     os.makedirs(output_images_dir, exist_ok=True)
     output_tsv = os.path.join(output_images_dir, "ecotaxa_output.tsv")
+    output_tsv = os.path.abspath(output_tsv)# make absolute path
     log_file = os.path.join(output_images_dir, "log.json")
+    log_file = os.path.abspath(log_file) # make absolute path
 
     # Dictionnaire de mapping des colonnes principales
     # column_mapping = {

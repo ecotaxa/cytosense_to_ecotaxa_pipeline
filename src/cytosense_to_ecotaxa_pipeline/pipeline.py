@@ -49,12 +49,14 @@ def create_default_extra_data(input_path):
     
     return extra_file
 
-def process_file(input_file):
+def process_file(input_file, extra_data): #, output_data):
     """
     Process a cytosense file through cyz2json and main.py
     
     Args:
         input_file (str): Path to the input .cyz file
+        extra_data
+        output_data
     """
     input_path = Path(input_file).resolve()
     if not input_path.exists():
@@ -68,6 +70,7 @@ def process_file(input_file):
     # Get paths
     json_output = input_path.with_suffix('.json')
     extra_data = create_default_extra_data(input_path)
+    output_data = input_path.with_suffix('.tsv')
     cyz2json = get_cyz2json_path()
     
     # Convert .cyz to .json
@@ -90,19 +93,52 @@ def process_file(input_file):
             str(main_script),
             str(json_output),
             '--extra',
-            str(extra_data)
+            str(extra_data),
+            '--output',
+            str(output_data)
         ], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error running main.py: {e}")
         sys.exit(1)
 
+
+def is_absolute_windows(path):
+    """Determines if a path is absolute on Windows."""
+    return os.path.splitdrive(path)[0] != ""
+
+def is_absolute_unix(path):
+    """Determines if a path is absolute on Unix/Linux/macOS."""
+    return path.startswith('/')
+
+def is_absolute(path):
+    """Determines if a path is absolute, depending on the operating system."""
+    if os.name == 'nt':
+        return is_absolute_windows(path)
+    else:
+        return is_absolute_unix(path)
+
 def main_cli():
     """Command line interface entry point"""
-    if len(sys.argv) != 2:
-        print("Usage: cytosense_to_ecotaxa_pipeline <input_cyz_file>")
+    if len(sys.argv) != 4:
+        print("Usage: cytosense_to_ecotaxa_pipeline <input_cyz_file> --extra <extra_data>") # --output <output_data>")
         sys.exit(1)
-    
-    process_file(sys.argv[1])
+
+        local_path = os.getcwd()
+        print("local_path")
+
+        input_file = sys.argv[1]
+        if not is_absolute(input_file):
+            input_file = os.path.abspath(input_file)
+
+        extra_file = sys.argv[2]
+        if not is_absolute(extra_file):
+            extra_file = os.path.abspath(extra_file)
+
+        # output_file 
+        print("Your files have been generated in:", local_path)
+
+    process_file(sys.argv[1],sys.argv[2]) #,sys.argv[3])
+    process_file(input_file, extra_file) #, output_file)
 
 if __name__ == "__main__":
     main_cli()
