@@ -319,6 +319,23 @@ def main(input_json, extra_data_file):
     print(f"Log des particules sans images : {log_file}")
     print("Fichier zip créé :", archive_filename)
 
+
+
+def is_absolute_windows(path):
+    """Determines if a path is absolute on Windows."""
+    return os.path.splitdrive(path)[0] != ""
+
+def is_absolute_unix(path):
+    """Determines if a path is absolute on Unix/Linux/macOS."""
+    return path.startswith('/')
+
+def is_absolute(path):
+    """Determines if a path is absolute, depending on the operating system."""
+    if os.name == 'nt':
+        return is_absolute_windows(path)
+    else:
+        return is_absolute_unix(path)
+
 # CLI
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyse un fichier JSON pour générer un TSV et des images.")
@@ -326,4 +343,15 @@ if __name__ == "__main__":
     parser.add_argument("--extra", required=True, help="Le chemin vers le fichier JSON contenant les extra data.")
     args = parser.parse_args()
 
-    main(args.input_json, args.extra)
+    input_json = args.input_json
+    if not is_absolute(input_json):
+        input_json = os.path.abspath(input_json)
+    print("input_file:", input_json)
+
+    extra_file = args.extra
+    if not is_absolute(extra_file):
+        extra_file = os.path.abspath(extra_file)
+    print("extra_file:",extra_file)
+
+    # main(args.input_json, args.extra)
+    main(input_json, extra_file)
