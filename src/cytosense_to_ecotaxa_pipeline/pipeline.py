@@ -100,8 +100,8 @@ def process_file(input_file, extra_data): #, output_data):
             str(json_output),
             '--extra',
             str(extra_data),
-            '--output',
-            str(output_data)
+            # '--output',
+            # str(output_data)
         ], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error running main.py: {e}")
