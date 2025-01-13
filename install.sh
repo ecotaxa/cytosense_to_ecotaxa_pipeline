@@ -123,11 +123,14 @@ if -f /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py; then
 fi
 
 
-# echo "Installing main.py to virtual environment..."
-# sudo cp src/cytosense_to_ecotaxa_pipeline/pipeline.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
-# sudo cp src/cytosense_to_ecotaxa_pipeline/main.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
-# sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py
-# sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py
+echo "Installing main.py to virtual environment..."
+sudo cp src/cytosense_to_ecotaxa_pipeline/pipeline.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
+sudo cp src/cytosense_to_ecotaxa_pipeline/main.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
+sudo cp src/cytosense_to_ecotaxa_pipeline/bin/* /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
+sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py
+sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py
+sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json
+
 
 # Install execution script
 echo "Creating launcher script..."
