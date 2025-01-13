@@ -125,6 +125,9 @@ sudo ln -s  /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages
 sudo ln -s  /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/main.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py
 export LD_LIBRARY_PATH=/opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/lib
 
+sudo chmod ago+x /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/bin/*
+
+
 # if [[-f /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json]]; then
 #     echo "missing Cyz2Json"
 #     exit 1
