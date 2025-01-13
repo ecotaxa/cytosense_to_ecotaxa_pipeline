@@ -16,8 +16,8 @@ def get_cyz2json_path():
     if not binary_path.exists():
         raise FileNotFoundError(f"Could not find cyz2json binary at {binary_path}")
     
-    if sys.platform != "win32":
-        binary_path.chmod(0o755)
+    # if sys.platform != "win32":
+        # binary_path.chmod(0o755)
     
     return str(binary_path)
 
