@@ -58,6 +58,10 @@ if [[ "$1" == "--github" ]]; then
     exit 1
   fi
 
+  echo "-------------------------------------------------------------"
+  ls -l "$WHEEL_FILE"
+  echo "-------------------------------------------------------------"
+
   # Verify the file is actually a wheel
   if ! unzip -l "$WHEEL_FILE" >/dev/null 2>&1; then
     echo "Error: Downloaded file is not a valid wheel file"
@@ -98,38 +102,52 @@ echo "Creating virtual environment..."
 echo "in system folder with sudo command, then you need to type your password"
 sudo python3 -m venv /opt/cytosense_to_ecotaxa_pipeline_venv
 
+sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/*
+source /opt/cytosense_to_ecotaxa_pipeline_venv/bin/activate
+# sudo /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pip install --upgrade pip
+pip install --upgrade pip
+
+
 # Install the wheel
 echo "Installing wheel file: $WHEEL_FILE"
-sudo /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pip install "$WHEEL_FILE"
+# sudo /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pip install "$WHEEL_FILE" || { echo "Failed to create virtual environment. Exiting."; exit 1; }
+sudo /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pip install "$WHEEL_FILE" || { echo "Failed to create virtual environment. Exiting."; exit 1; }
 # Check installation status
-if [ $? -ne 0 ]; then
-    echo "Installation failed!"
-    exit 1
-fi
+# if [ $? -ne 0 ]; then
+#     echo "Installation failed!"
+#     exit 1
+# fi
 
-if -f /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json; then
-    echo "missing Cyz2Json"
-    exit 1
-fi
+/opt/cytosense_to_ecotaxa_pipeline_venv/bin/pip show -f cytosense_to_ecotaxa_pipeline
 
-if -f /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py; then
-    echo "missing pipeline.py"
-    exit 1
-fi
+sudo ln -s  /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/bin/Cyz2Json /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json
+sudo ln -s  /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/pipeline.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py
+sudo ln -s  /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/main.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py
+export LD_LIBRARY_PATH=/opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/lib
 
-if -f /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py; then
-    echo "missing main.py"
-    exit 1
-fi
+# if [[-f /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json]]; then
+#     echo "missing Cyz2Json"
+#     exit 1
+# fi
+
+# if [[-f /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py]]; then
+#     echo "missing pipeline.py"
+#     exit 1
+# fi
+
+# if [[-f /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py]]; then
+#     echo "missing main.py"
+#     exit 1
+# fi
 
 
-echo "Installing main.py to virtual environment..."
-sudo cp src/cytosense_to_ecotaxa_pipeline/pipeline.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
-sudo cp src/cytosense_to_ecotaxa_pipeline/main.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
-sudo cp src/cytosense_to_ecotaxa_pipeline/bin/* /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
-sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py
-sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py
-sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json
+# echo "Installing main.py to virtual environment..."
+# sudo cp src/cytosense_to_ecotaxa_pipeline/pipeline.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
+# sudo cp src/cytosense_to_ecotaxa_pipeline/main.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
+# sudo cp src/cytosense_to_ecotaxa_pipeline/bin/* /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
+# sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py
+# sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py
+# sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json
 
 
 # Install execution script
