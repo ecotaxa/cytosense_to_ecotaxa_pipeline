@@ -13,7 +13,7 @@ jobs:
           - platform: windows
             platform_tag: win_amd64
             cyz2json_platform: windows
-            binary_name: cyz2Json.exe
+            binary_name: Cyz2Json.exe
             binary_pattern: "*.dll"
           - platform: ubuntu
             platform_tag: linux_x86_64
@@ -23,12 +23,12 @@ jobs:
           - platform: macos-universal
             platform_tag: macosx_11_0_arm64
             cyz2json_platform: macos
-            binary_name: cyz2Json
+            binary_name: Cyz2Json
             binary_pattern: "*.dylib"
           - platform: macos-universal
             platform_tag: macosx_10_9_x86_64
             cyz2json_platform: macos
-            binary_name: cyz2Json
+            binary_name: Cyz2Json
             binary_pattern: "*.dylib"
     runs-on: ubuntu-latest
     steps:
@@ -52,7 +52,7 @@ jobs:
           mkdir -p src/cytosense_to_ecotaxa_pipeline/bin
           
           # Extract binaries for this platform
-          unzip -j "downloads/cyz2json-${{ matrix.cyz2json_platform }}-latest.zip" \
+          unzip -o "downloads/cyz2json-${{ matrix.cyz2json_platform }}-latest.zip" \
                 -d src/cytosense_to_ecotaxa_pipeline/bin/
           
           # Set executable permissions if not Windows
