@@ -6,65 +6,63 @@ on:
       - 'v*'
 
 jobs:
-  fetch-cyz2json:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Download latest cyz2json release
-        uses: robinraju/release-downloader@v1.11
-        with:
-          repository: "ecotaxa/cyz2json"
-          latest: true
-          fileName: "*"
-          out-file-path: "downloads"
-      - name: Upload binaries
-        uses: actions/upload-artifact@v4
-        with:
-          name: cyz2json-binaries
-          path: downloads/*
-
   build-packages:
-    needs: fetch-cyz2json
     strategy:
       matrix:
         include:
           - platform: windows
             platform_tag: win_amd64
-            binary_ext: ".exe"
             cyz2json_platform: windows
+            binary_name: cyz2Json.exe
+            binary_pattern: "*.dll"
           - platform: ubuntu
             platform_tag: linux_x86_64
-            binary_ext: ""
             cyz2json_platform: ubuntu
+            binary_name: cyz2Json
+            binary_pattern: "*.so"
           - platform: macos-universal
             platform_tag: macosx_11_0_arm64
-            binary_ext: ""
             cyz2json_platform: macos
+            binary_name: cyz2Json
+            binary_pattern: "*.dylib"
           - platform: macos-universal
             platform_tag: macosx_10_9_x86_64
-            binary_ext: ""
             cyz2json_platform: macos
+            binary_name: cyz2Json
+            binary_pattern: "*.dylib"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
       - uses: actions/setup-python@v3
         with:
           python-version: '3.8'
       
-      - name: Download binaries
-        uses: actions/download-artifact@v4
+      - name: Download cyz2json for platform
+        uses: robinraju/release-downloader@v1.11
         with:
-          name: cyz2json-binaries
-          path: downloads
+          repository: "ecotaxa/cyz2json"
+          latest: true
+          fileName: "cyz2json-${{ matrix.cyz2json_platform }}-latest.zip"
+          out-file-path: "downloads"
 
-      - name: Prepare platform binary
+      - name: Prepare package binaries
         run: |
+          # Create bin directory in package
           mkdir -p src/cytosense_to_ecotaxa_pipeline/bin
-          unzip -o "downloads/cyz2json-${{ matrix.cyz2json_platform }}-latest.zip" -d temp/
-          cp -r temp/* src/cytosense_to_ecotaxa_pipeline/bin/
-          if [ -f src/cytosense_to_ecotaxa_pipeline/bin/cyz2Json${{ matrix.binary_ext }} ]; then
-            chmod +x src/cytosense_to_ecotaxa_pipeline/bin/cyz2Json${{ matrix.binary_ext }}
+          
+          # Extract binaries for this platform
+          unzip -j "downloads/cyz2json-${{ matrix.cyz2json_platform }}-latest.zip" \
+                "${{ matrix.binary_name }}" ${{ matrix.binary_pattern }} \
+                -d src/cytosense_to_ecotaxa_pipeline/bin/
+          
+          # Set executable permissions if not Windows
+          if [ "${{ matrix.platform }}" != "windows" ]; then
+            chmod +x src/cytosense_to_ecotaxa_pipeline/bin/${{ matrix.binary_name }}
           fi
+          
+          # List contents of bin directory
+          ls -la src/cytosense_to_ecotaxa_pipeline/bin/
 
       - name: Install build tools
         run: |
