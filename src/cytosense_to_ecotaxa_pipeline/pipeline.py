@@ -7,9 +7,10 @@ import json
 def get_cyz2json_path():
     """Get the platform-specific path to cyz2json binary"""
     package_dir = Path(__file__).parent
-    bin_dir = package_dir / "bin"
+    # bin_dir = package_dir / "bin"
+    bin_dir = package_dir
     
-    binary_name = "cyz2Json.exe" if sys.platform == "win32" else "cyz2Json"
+    binary_name = "cyz2Json.exe" if sys.platform == "win32" else "Cyz2Json"
     binary_path = bin_dir / binary_name
     
     if not binary_path.exists():
