@@ -107,6 +107,22 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+if -f /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json; then
+    echo "missing Cyz2Json"
+    exit 1
+fi
+
+if -f /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py; then
+    echo "missing pipeline.py"
+    exit 1
+fi
+
+if -f /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py; then
+    echo "missing main.py"
+    exit 1
+fi
+
+
 # echo "Installing main.py to virtual environment..."
 # sudo cp src/cytosense_to_ecotaxa_pipeline/pipeline.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
 # sudo cp src/cytosense_to_ecotaxa_pipeline/main.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/

@@ -19,10 +19,13 @@ dependencies = [
 
 [project.scripts]
 cytosense_to_ecotaxa_pipeline = "cytosense_to_ecotaxa_pipeline.pipeline:main_cli"
+cyz2json = "cytosense_to_ecotaxa_pipeline.pipeline:main_cli"  # Optionnel: alias
 
 [tool.setuptools]
-package-dir = {"" = "src"}
-packages = ["cytosense_to_ecotaxa_pipeline"]
+script-files = [
+    "src/cytosense_to_ecotaxa_pipeline/bin/Cyz2Json",
+    "src/cytosense_to_ecotaxa_pipeline/bin/Cyz2Json.exe"
+]
 
 [tool.setuptools.package-data]
 "cytosense_to_ecotaxa_pipeline" = [
