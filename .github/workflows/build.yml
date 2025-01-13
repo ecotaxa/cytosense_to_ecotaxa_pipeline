@@ -53,7 +53,6 @@ jobs:
           
           # Extract binaries for this platform
           unzip -j "downloads/cyz2json-${{ matrix.cyz2json_platform }}-latest.zip" \
-                "${{ matrix.binary_name }}" ${{ matrix.binary_pattern }} \
                 -d src/cytosense_to_ecotaxa_pipeline/bin/
           
           # Set executable permissions if not Windows
@@ -61,8 +60,9 @@ jobs:
             chmod +x src/cytosense_to_ecotaxa_pipeline/bin/${{ matrix.binary_name }}
           fi
           
-          # List contents of bin directory
-          ls -la src/cytosense_to_ecotaxa_pipeline/bin/
+      - name: List contents of bin directory
+        run:
+          ls -la src/cytosense_to_ecotaxa_pipeline/bin/*
 
       - name: Install build tools
         run: |
