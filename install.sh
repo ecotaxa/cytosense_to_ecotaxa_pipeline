@@ -108,7 +108,9 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Installing main.py to virtual environment..."
+sudo cp src/cytosense_to_ecotaxa_pipeline/pipeline.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
 sudo cp src/cytosense_to_ecotaxa_pipeline/main.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/
+sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py
 sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py
 
 # Install execution script
@@ -116,7 +118,7 @@ echo "Creating launcher script..."
 sudo tee /usr/local/bin/cytosense_to_ecotaxa_pipeline << 'EOF'
 #!/bin/bash
 source /opt/cytosense_to_ecotaxa_pipeline_venv/bin/activate
-python /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py "$@"
+python /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py "$@"
 deactivate
 EOF
 

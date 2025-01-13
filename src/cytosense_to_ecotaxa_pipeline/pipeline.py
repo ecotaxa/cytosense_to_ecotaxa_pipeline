@@ -72,6 +72,11 @@ def process_file(input_file, extra_data): #, output_data):
     extra_data = create_default_extra_data(input_path)
     output_data = input_path.with_suffix('.tsv')
     cyz2json = get_cyz2json_path()
+
+    print("json_output:",json_output)
+    print("extra_data:",extra_data)
+    print("output_data:",output_data)
+    print("cyz2json:",cyz2json)
     
     # Convert .cyz to .json
     print(f"Converting {input_path.name} to JSON...")
@@ -122,6 +127,8 @@ def main_cli():
     if len(sys.argv) != 4:
         print("Usage: cytosense_to_ecotaxa_pipeline <input_cyz_file> --extra <extra_data>") # --output <output_data>")
         sys.exit(1)
+
+    print("-- Pipeline --")
 
     local_path = os.getcwd()
     print("local_path")

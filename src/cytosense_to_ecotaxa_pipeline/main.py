@@ -338,6 +338,9 @@ def is_absolute(path):
 
 # CLI
 if __name__ == "__main__":
+
+    print("-- main.py --")
+
     parser = argparse.ArgumentParser(description="Analyse un fichier JSON pour générer un TSV et des images.")
     parser.add_argument("input_json", help="Le chemin vers le fichier JSON à analyser.")
     parser.add_argument("--extra", required=True, help="Le chemin vers le fichier JSON contenant les extra data.")
