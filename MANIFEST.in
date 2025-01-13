@@ -1,0 +1,3 @@
+include src/cytosense_to_ecotaxa_pipeline/pipeline.py
+include src/cytosense_to_ecotaxa_pipeline/main.py
+include src/cytosense_to_ecotaxa_pipeline/bin/*

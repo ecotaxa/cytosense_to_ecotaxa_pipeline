@@ -25,6 +25,9 @@ package-dir = {"" = "src"}
 packages = ["cytosense_to_ecotaxa_pipeline"]
 
 [tool.setuptools.package-data]
-cytosense_to_ecotaxa_pipeline = ["bin/*"]
+"cytosense_to_ecotaxa_pipeline" = [
+    "bin/*",
+    "*.py"
+]
 
 [tool.setuptools_scm]
