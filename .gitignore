@@ -170,3 +170,5 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .github/.DS_Store
+images/
+.DS_Store
