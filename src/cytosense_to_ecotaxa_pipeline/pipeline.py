@@ -70,7 +70,8 @@ def process_file(input_file, extra_data): #, output_data):
     
     # Get paths
     json_output = input_path.with_suffix('.json')
-    # extra_data = create_default_extra_data(input_path)
+    extra_data = create_default_extra_data(input_path)
+    # extra_data = Path(extra_data).resolve()
     output_data = input_path.with_suffix('.tsv')
     cyz2json = get_cyz2json_path()
 
