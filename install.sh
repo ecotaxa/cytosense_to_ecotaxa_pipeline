@@ -104,6 +104,18 @@ sudo python3 -m venv /opt/cytosense_to_ecotaxa_pipeline_venv
 
 sudo chmod +x /opt/cytosense_to_ecotaxa_pipeline_venv/bin/*
 source /opt/cytosense_to_ecotaxa_pipeline_venv/bin/activate
+
+# Get the Python executable path within the virtual environment
+PYTHON_EXECUTABLE=$(which python)
+# Get the Python major and minor version
+PYTHON_VERSION=$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+# Construct the site-packages path using the determined version
+SITE_PACKAGES_PATH=$(python -c "import site; print(site.getsitepackages()[0])")
+
+echo "Python executable: $PYTHON_EXECUTABLE"
+echo "Python version: $PYTHON_VERSION"
+echo "Site-packages path: $SITE_PACKAGES_PATH"
+
 # sudo /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pip install --upgrade pip
 pip install --upgrade pip
 
@@ -118,15 +130,23 @@ sudo /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pip install "$WHEEL_FILE" || { 
 #     exit 1
 # fi
 
-/opt/cytosense_to_ecotaxa_pipeline_venv/bin/pip show -f cytosense_to_ecotaxa_pipeline
+# debug to show the files
+# /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pip show -f cytosense_to_ecotaxa_pipeline
 
-sudo ln -s  /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/bin/Cyz2Json /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json
-sudo ln -s  /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/pipeline.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py
-sudo ln -s  /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/main.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py
+
+# sudo ln -s  /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/bin/Cyz2Json /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json
+# sudo ln -s  /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/pipeline.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py
+# sudo ln -s  /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/main.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py
+sudo ln -s "$SITE_PACKAGES_PATH/cytosense_to_ecotaxa_pipeline/bin/Cyz2Json" /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json
+sudo ln -s "$SITE_PACKAGES_PATH/cytosense_to_ecotaxa_pipeline/pipeline.py" /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py
+sudo ln -s "$SITE_PACKAGES_PATH/cytosense_to_ecotaxa_pipeline/main.py" /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py
+
+
 export LD_LIBRARY_PATH=/opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/lib
 
 sudo chmod ago+x /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/bin/*
 
+desactivate
 
 # if [[-f /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json]]; then
 #     echo "missing Cyz2Json"
@@ -163,6 +183,5 @@ deactivate
 EOF
 
 sudo chmod +x /usr/local/bin/cytosense_to_ecotaxa_pipeline
-sudo ln -s /usr/local/bin/cytosense_to_ecotaxa_pipeline /opt/cytosense_to_ecotaxa_pipeline_venv/bin/cytosense_to_ecotaxa_pipeline
 
 echo "Installation completed successfully!"

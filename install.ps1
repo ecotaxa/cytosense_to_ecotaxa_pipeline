@@ -1,63 +1,60 @@
-# Determine OS and Architecture (for wheel selection)
-$OS = Get-WmiObject Win32_OperatingSystem | Select-Object -ExpandProperty Caption
-$ARCH = (Get-WmiObject Win32_Processor).Architecture
+# Install script for Windows (install.ps1)
 
-# Determine correct wheel file based on architecture (adjust as needed)
-switch ($ARCH) {
-  "64-bit" { $ARCH_NAME = "windows"; break } # Example for most common architecture
-  # Add other architectures if needed
-  Default { Write-Host "Unsupported architecture: $ARCH"; exit 1 }
+# Check if running as administrator
+if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+  Write-Error "This script requires administrator privileges. Please run it as administrator."
+  exit 1
 }
 
-# Get latest tag using GitHub API
-$LatestTag = (Invoke-RestMethod "https://api.github.com/repos/ecotaxa/cytosense_to_ecotaxa_pipeline/releases/latest").tag_name
+# Install pre-requisites (jq - consider using a package manager like Chocolatey or scoop if available)
+#  Handle jq installation appropriately for Windows. This example assumes jq is already available in the PATH
+Write-Host "Make sure jq is installed and available in the PATH"
 
-if (-not $LatestTag) {
-    Write-Host "Error getting latest tag. Exiting."
-    exit 1
-}
+# Create virtual environment
+python -m venv $env:LOCALAPPDATA\cytosense_to_ecotaxa_pipeline_venv
+
+# Activate virtual environment
+& "$env:LOCALAPPDATA\cytosense_to_ecotaxa_pipeline_venv\Scripts\Activate.ps1"
+
+# Install Python packages within the virtual environment
+pip install -r requirements.txt
+pip install . # Install the package
+
+# Create installation directory
+$installDir = "$env:ProgramFiles\cytosense_to_ecotaxa_pipeline"
+New-Item -ItemType Directory -Path $installDir -Force
+
+# Get Python executable path within the virtual environment
+$pythonExec = (Get-Command python).Source
+
+# Get site-packages path dynamically
+$sitePackagesPath = & python -c "import site; print(site.getsitepackages()[0])"
+
+# Copy files to the installation directory
+Copy-Item -Path "$sitePackagesPath\cytosense_to_ecotaxa_pipeline\bin\Cyz2Json.exe" -Destination "$installDir\Cyz2Json.exe"
+Copy-Item -Path "$sitePackagesPath\cytosense_to_ecotaxa_pipeline\pipeline.py" -Destination "$installDir\pipeline.py"
+Copy-Item -Path "$sitePackagesPath\cytosense_to_ecotaxa_pipeline\main.py" -Destination "$installDir\main.py"
 
 
-# Construct wheel file name
-$WheelFileName = "cytosense_to_ecotaxa_pipeline_${ARCH_NAME}-${LatestTag}-py3-none-any.whl"
 
-# Construct download URL
-$WheelUrl = "https://github.com/ecotaxa/cytosense_to_ecotaxa_pipeline/releases/download/${LatestTag}/${WheelFileName}"
-
-# Download wheel file 
-$WheelFile = "$PSScriptRoot\$WheelFileName" # Save to same directory as the script
-Invoke-WebRequest -Uri $WheelUrl -OutFile $WheelFile
-
-
-if (-not (Test-Path $WheelFile)) {
-    Write-Host "Error downloading wheel file. Exiting."
-    exit 1
-}
-
-# Install wheel using pip
-# Check if venv exists - create if does not exist
-$Venv = "C:\Users\sebastiengalvagno\AppData\Local\Programs\Python\Python310\python.exe"
-if (-not (Test-Path "$Venv")) {
-   # Path does not exist - assuming we have not created a venv
-   Write-Host "Creating virtual environment"
-   & $Venv -m venv .venv
-}
-
-# Now activate venv and install package
-.venv\Scripts\activate
-& $Venv -m pip install $WheelFile
-
-# ... any further Windows-specific installation steps (e.g., creating shortcuts)
-
-# Example of creating a simple batch script to run your Python entry point (optional)
-$BatchScriptContent = @"
+# Create executable wrappers (using batch files for simplicity)
+# Cyz2Json.bat
+@"
 @echo off
-.venv\Scripts\activate
-python your_main_script.py %* 
+"$env:LOCALAPPDATA\cytosense_to_ecotaxa_pipeline_venv\Scripts\python.exe" "$installDir\pipeline.py" %*
+"@ | Out-File -Encoding ascii "$installDir\cytosense_to_ecotaxa_pipeline.bat"
+
+
+# Add installation directory to PATH
+$currentPath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
+if (-not ($currentPath -like "*$installDir*")) {
+  [Environment]::SetEnvironmentVariable("PATH", "$installDir;$currentPath", "Machine")
+  Write-Host "Added '$installDir' to the system PATH.  You may need to restart your PowerShell session or log out and back in for this change to take effect."
+}
+
+
+# Deactivate virtual environment
 deactivate
-"@
-$BatchScriptContent | Out-File -FilePath "run_cytosense_to_ecotaxa_pipeline.bat" -Encoding ascii
 
 Write-Host "Installation complete."
-
 
