@@ -95,7 +95,7 @@ def main(input_json, extra_data_file):
     output_images_dir = "images"
     os.makedirs(output_images_dir, exist_ok=True)
     output_tsv = os.path.join(output_images_dir, "ecotaxa_output.tsv")
-    output_tsv = os.path.abspath(output_tsv)# make absolute path
+    # output_tsv = os.path.abspath(output_tsv)# make absolute path
     log_file = os.path.join(output_images_dir, "log.json")
     log_file = os.path.abspath(log_file) # make absolute path
 
@@ -245,7 +245,7 @@ def main(input_json, extra_data_file):
                 if "." in key:
                     print(f"Key: {key}, Value: {data.get(key, None)}")
                     key_parts = key.split(".")
-                    print(f"Key parts: {key_parts}")
+                    # print(f"Key parts: {key_parts}")
                 #     value = data.get(key_parts[0], {}).get(key_parts[1], None)
                 #     print(f"Key parts: {key_parts}, Value: {value}")
                 # else:
@@ -260,16 +260,16 @@ def main(input_json, extra_data_file):
                         if len(star)>1: part = star[0]
                         if len(bracket)>1: 
                             part = bracket[0]
-                            print(f"Bracket: part: {part}")
+                            # print(f"Bracket: part: {part}")
                             if part == "particles":
                                 current_obj = particle
-                                print("Particles -> " , current_obj)
+                                # print("Particles -> " , current_obj)
                             # current_obj = part
                         else:
                             current_obj = current_obj.get(part, {})
-                            if part == "pulseShapes":
-                                print("PulseShapes -> " , current_obj)
-                        print(f"Current object: {current_obj}")
+                            # if part == "pulseShapes":
+                                # print("PulseShapes -> " , current_obj)
+                        # print(f"Current object: {current_obj}")
 
 
 
