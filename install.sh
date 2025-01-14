@@ -163,5 +163,6 @@ deactivate
 EOF
 
 sudo chmod +x /usr/local/bin/cytosense_to_ecotaxa_pipeline
+sudo ln -s /usr/local/bin/cytosense_to_ecotaxa_pipeline /opt/cytosense_to_ecotaxa_pipeline_venv/bin/cytosense_to_ecotaxa_pipeline
 
 echo "Installation completed successfully!"
