@@ -142,26 +142,16 @@ def main(input_json, extra_data_file):
     "instrument.measurementResults.sheathTemperature": {"name": "sample_measurementResults_sheathTemperature", "type": "[f]", "transform": None},
     "instrument.measurementResults.absolutePressure": {"name": "sample_measurementResults_absolutePressure", "type": "[f]", "transform": None},
     "instrument.measurementResults.differentialPressure": {"name": "sample_measurementResults_differential_pressure","type": "[f]","transform": None},
-#     "particles.pulseShape.FWS": {"name": "pulseShape_FWS","type": "[t]","transform": None},
-#     "particles.pulseShape.Sidewards Scatter": {"name": "pulseShape_Sidewards_Scatter","type": "[t]","transform": None},
-#     "particles.pulseShape.Fl Yellow": {"name": "pulseShape_Fl_Yellow","type": "[t]","transform": None},
-#     "particles.pulseShape.Fl Orange": {"name": "pulseShape_Fl_Orange","type": "[t]","transform": None},
-#     "particles.pulseShape.Fl Red": {"name": "pulseShape_Fl_Red","type": "[t]","transform": None},
-#     "particles.pulseShape.Curvatures": {"name": "pulseShape_Curvatures","type": "[t]","transform": None},
-#     "particles.pulseShape.Forwards Scatter Right": {"name": "pulseShape_Forwards_Scatter_Right","type": "[t]","transform": None},
-#     "particles.pulseShape.Forwards Scatter Right": {"name": "pulseShape_Forwards_Scatter_Right","type": "[t]","transform": None},
-    # "particles.pulseShape": {"name": "pulseShape_FWS","type": "[t]","transform":None },
-    # "particles.pulseShape": {"name": "pulseShape_FWS2","type": "[t]","transform":None },
 
-    # "particles[].pulseShapes": {"name": "pulseShape_FWS","type": "[t]","transform":search_FWS }
-    "particles[].pulseShapes*FWS": {"name": "object_pulseShape_FWS","type": "[t]","transform":search_pulse_shapes("FWS")},
-    "particles[].pulseShapes*Sidewards_Scatter": {"name": "object_pulseShape_Sidewards_Scatter","type": "[t]","transform":search_pulse_shapes("Sidewards Scatter")},
-    "particles[].pulseShapes*Fl_Yellow": {"name": "object_pulseShape_Fl_Yellow","type": "[t]","transform":search_pulse_shapes("Fl Yellow")},
-    "particles[].pulseShapes*Fl_Orange": {"name": "object_pulseShape_Fl_Orange","type": "[t]","transform":search_pulse_shapes("Fl Orange")},
-    "particles[].pulseShapes*Fl_Red": {"name": "object_pulseShape_Fl_Red","type": "[t]","transform":search_pulse_shapes("Fl Red")},
-    "particles[].pulseShapes*Curvature": {"name": "object_pulseShape_Curvature","type": "[t]","transform":search_pulse_shapes("Curvature")},
-    "particles[].pulseShapes*Forward_Scatter_Left": {"name": "object_pulseShape_Forward_Scatter_Left","type": "[t]","transform":search_pulse_shapes("Forward Scatter Left")},
-    "particles[].pulseShapes*Forward_Scatter_Right": {"name": "object_pulseShape_Forward_Scatter_Right","type": "[t]","transform":search_pulse_shapes("Forward Scatter Right")},
+
+    # "particles[].pulseShapes*FWS": {"name": "object_pulseShape_FWS","type": "[t]","transform":search_pulse_shapes("FWS")},
+    # "particles[].pulseShapes*Sidewards_Scatter": {"name": "object_pulseShape_Sidewards_Scatter","type": "[t]","transform":search_pulse_shapes("Sidewards Scatter")},
+    # "particles[].pulseShapes*Fl_Yellow": {"name": "object_pulseShape_Fl_Yellow","type": "[t]","transform":search_pulse_shapes("Fl Yellow")},
+    # "particles[].pulseShapes*Fl_Orange": {"name": "object_pulseShape_Fl_Orange","type": "[t]","transform":search_pulse_shapes("Fl Orange")},
+    # "particles[].pulseShapes*Fl_Red": {"name": "object_pulseShape_Fl_Red","type": "[t]","transform":search_pulse_shapes("Fl Red")},
+    # "particles[].pulseShapes*Curvature": {"name": "object_pulseShape_Curvature","type": "[t]","transform":search_pulse_shapes("Curvature")},
+    # "particles[].pulseShapes*Forward_Scatter_Left": {"name": "object_pulseShape_Forward_Scatter_Left","type": "[t]","transform":search_pulse_shapes("Forward Scatter Left")},
+    # "particles[].pulseShapes*Forward_Scatter_Right": {"name": "object_pulseShape_Forward_Scatter_Right","type": "[t]","transform":search_pulse_shapes("Forward Scatter Right")},
 
 }
     
