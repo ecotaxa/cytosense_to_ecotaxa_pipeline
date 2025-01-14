@@ -9,7 +9,6 @@ A pipeline tool to convert Cytosense data files to EcoTaxa compatible format.
 - Automated conversion from Cytosense (.cyz) to EcoTaxa format
 - Built-in cyz2json binary for data extraction
 - Cross-platform support (Linux, Windows, MacOS)
-- System-wide installation
 
 # pre installation
 ## Linux
@@ -36,11 +35,13 @@ on Windows use install.ps1 instead of install.sh not tested
 
 
 ### On MacOSX
-manual build
-to bypass security with xattr command, then need to go in Systems Settings > Security & Privacy > General and allow the app to be opened for the 10+ libraries. (need to relauch sevaral time the cyz2json binary)
-
-or use
+When you use manual build: you need to bypass security 
+You have 2 possibilities :
+using xattr command.
+```
 xattr -d com.apple.quarantine  /opt/cytosense_to_ecotaxa_pipeline/bin/*
+```
+or if you do not want use xattr you need to go in Systems Settings > Security & Privacy > General and allow the app to be opened for the 10+ libraries. You need to relauch sevaral time the cyz2json binary to acheive all neccessary permissions.
 
 
 # Run the pipeline
