@@ -70,7 +70,7 @@ def process_file(input_file, extra_data): #, output_data):
     
     # Get paths
     json_output = input_path.with_suffix('.json')
-    extra_data = create_default_extra_data(input_path)
+    # extra_data = create_default_extra_data(input_path)
     output_data = input_path.with_suffix('.tsv')
     cyz2json = get_cyz2json_path()
 
@@ -126,7 +126,7 @@ def is_absolute(path):
 def main_cli():
     """Command line interface entry point"""
     if len(sys.argv) != 4:
-        print("Usage: cytosense_to_ecotaxa_pipeline <input_cyz_file> --extra <extra_data>") # --output <output_data>")
+        print("Usage: cytosense_to_ecotaxa_pipeline <input_cyz_file> --extra <extra_data.json>") # --output <output_data>")
         sys.exit(1)
 
     print("-- Pipeline --")
