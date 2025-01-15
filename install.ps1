@@ -6,9 +6,36 @@ if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
   exit 1
 }
 
-# Install pre-requisites (jq - consider using a package manager like Chocolatey or scoop if available)
-#  Handle jq installation appropriately for Windows. This example assumes jq is already available in the PATH
-Write-Host "Make sure jq is installed and available in the PATH"
+
+$latestTag = (Invoke-WebRequest -Uri "https://api.github.com/repos/ecotaxa/cytosense_to_ecotaxa_pipeline/releases/latest" | ConvertFrom-Json).tag_name
+$tagWithoutV = $latestTag -replace "^v", ""
+
+$wheelFileName = "cytosense_to_ecotaxa_pipeline-${tagWithoutV}-py3-none-${platformTag}.whl"
+  $wheelUrl = "https://github.com/ecotaxa/cytosense_to_ecotaxa_pipeline/releases/download/${latestTag}/${wheelFileName}"
+
+  # Some debug messages
+  Write-Host "System architecture: $arch"
+  Write-Host "Using platform tag: $platformTag"
+  Write-Host "Latest tag: $latestTag"
+  Write-Host "Tag without 'v': $tagWithoutV"
+  Write-Host "Wheel file name: $wheelFileName"
+  Write-Host "Wheel URL: $wheelUrl"
+
+  # Download the wheel file (PowerShell equivalent)
+  $wheelFile = "$env:TEMP\$wheelFileName"
+  Write-Host "Downloading wheel from: $wheelUrl"
+  try {
+    Invoke-WebRequest -Uri $wheelUrl -OutFile $wheelFile
+  }
+  catch {
+    Write-Error "Error downloading wheel file. Exiting."
+    exit 1
+  }
+
+    # Check if the file was downloaded successfully (PowerShell equivalent)
+    if (!(Test-Path $wheelFile)) {
+      Write-Error "Downloaded file not found: $wheelFile"
+      exit 1
 
 # Create virtual environment
 python -m venv $env:LOCALAPPDATA\cytosense_to_ecotaxa_pipeline_venv
@@ -17,8 +44,9 @@ python -m venv $env:LOCALAPPDATA\cytosense_to_ecotaxa_pipeline_venv
 & "$env:LOCALAPPDATA\cytosense_to_ecotaxa_pipeline_venv\Scripts\Activate.ps1"
 
 # Install Python packages within the virtual environment
-pip install -r requirements.txt
-pip install . # Install the package
+# pip install -r requirements.txt
+# pip install . # Install the package
+pip install $wheelFile
 
 # Create installation directory
 $installDir = "$env:ProgramFiles\cytosense_to_ecotaxa_pipeline"
@@ -31,7 +59,8 @@ $pythonExec = (Get-Command python).Source
 $sitePackagesPath = & python -c "import site; print(site.getsitepackages()[0])"
 
 # Copy files to the installation directory
-Copy-Item -Path "$sitePackagesPath\cytosense_to_ecotaxa_pipeline\bin\Cyz2Json.exe" -Destination "$installDir\Cyz2Json.exe"
+# Copy-Item -Path "$sitePackagesPath\cytosense_to_ecotaxa_pipeline\bin\Cyz2Json.exe" -Destination "$installDir\Cyz2Json.exe"
+Copy-Item -Path "$sitePackagesPath\cytosense_to_ecotaxa_pipeline\bin" -Destination "$installDir\bin" -Recurse -Force
 Copy-Item -Path "$sitePackagesPath\cytosense_to_ecotaxa_pipeline\pipeline.py" -Destination "$installDir\pipeline.py"
 Copy-Item -Path "$sitePackagesPath\cytosense_to_ecotaxa_pipeline\main.py" -Destination "$installDir\main.py"
 
