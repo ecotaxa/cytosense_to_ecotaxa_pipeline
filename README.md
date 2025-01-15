@@ -91,3 +91,68 @@ need to make the links to the cyz2json binary and the python scripts
 
 + extra_data.json : not other name allowed
 
+
+# Make your mapping
+
+To update your mapping edit main.py, and search column_mapping variable. This is a dictionary where the key is the path to a JSON Cytosense feature 
+and the value is an object to define how to store and transform the data for ecotaxa. The object have 3 features:
+    + name: is the name of the column in ecotaxa
+    + type: is the type of the column in ecotaxa [t] or [f] (for text or float)
+    + transform: is a function to transform the value before storing it, you can use a lambda function or a function to transform the value
+
+the cytosense key is a path in the json file, you can use the dot notation to access nested objects.
+
+for example instrument.name is the path to read feature
+```JSON
+{
+    "instrument":{
+        "name": "instrument name"
+    }
+}
+```
+
+## Read data in particle array
+
+to read feature, that are define in the particle array, you need to use square bracket notation
+"particles[].pulseShapes", in this case dot path are limite to the first feature and need to use a function to find the data on it
+
+To get particles[].pulseShapes.FWS, in fact you need to use a function to find the data on it
+
+```JSON
+"particles[].pulseShapes*FWS": {"name": "object_pulseShape_FWS","type": "[t]","transform":search_pulse_shapes("FWS")}
+```
+
+search_pulse_shapes("FWS") is a function that search for the feature FWS in the pulseShapes array and return the value you could add some processing in the sub function for example to convert the values in this case into a polynomial function or to convert the values to a string (take care to the data size string are limited to 250 characters)
+
+The sub function permit to pass extra parameters to the function
+```python
+def search_pulse_shapes(description):
+    """
+    Then in your mapping you can use it like:
+    {"name": "pulseShape_FWS", "type": "[t]", "transform": search_pulse_shapes("FWS")}
+    """
+    def search(value):
+        result = next((item for item in value if item['description'] == description), None)
+        if result:
+            return result["values"]
+        return None
+    return search
+```
+
+
+### Several use of the same cytosense feature
+If you need to use the same cytosense feature several time in the mapping you can use the same name but with a different suffix: the suffix must be and id prefixed by a star.
+
+Ecotaxa have a column for date and a column for time, but in the Cytosense data there is only one feature containing both date and time. Then you need to split the feature in two store in two columns.
+
+For example:
+the path to my feature is "instrument.measurementResults.start" then I define two mapping:
+I use suffix "*date" and "*hour" to define different entries in the mapping, but you are free to choose the name you want (just need to have differnet suffix for each column, I could work with *1 et #2 
+or
+ the couple : no suffix and *mysuffix)
+ (there are no use of the suffix in the code, that just for Python Dictionnary Key that must be unique)
+```JSON
+    "instrument.measurementResults.start*date": {"name": "sample_measurementResults_Start", "type": "[t]", "transform": extract_date_utc},
+    "instrument.measurementResults.start*hour": {"name": "sample_measurementResults_StartH", "type": "[t]", "transform": extract_time_utc},
+ ```
+

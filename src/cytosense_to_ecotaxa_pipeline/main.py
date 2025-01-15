@@ -6,8 +6,11 @@ import argparse
 from datetime import datetime
 from zipfile import ZipFile
 
-# Transformation pour supprimer l'extension d'un nom de fichier
+
 def remove_extension(value):
+    """
+    Function to remove the extension name from a file name.
+    """
     if value and isinstance(value, str):
         return os.path.splitext(value)[0]
     return value
@@ -32,6 +35,7 @@ def remove_extension(value):
 def extract_date_utc(iso_datetime):
     """
     Extrait la date au format YYYYMMDD UTC à partir d'une chaîne ISO 8601.
+    Convert an ISO 8601 datetime string to YYYYMMDD UTC format.
     """
     try:
         dt = datetime.fromisoformat(iso_datetime.rstrip("Z")).astimezone()  # Conversion vers UTC
@@ -42,6 +46,7 @@ def extract_date_utc(iso_datetime):
 def extract_time_utc(iso_datetime):
     """
     Extrait l'heure au format HHMMSS UTC à partir d'une chaîne ISO 8601.
+    Convert an ISO 8601 datetime string to HHMMSS UTC format.
     """
     try:
         dt = datetime.fromisoformat(iso_datetime.rstrip("Z")).astimezone()  # Conversion vers UTC
@@ -58,30 +63,38 @@ def extract_time_utc(iso_datetime):
 #     return result["values"]
 
 def search_pulse_shapes(description):
+    """
+    Then in your mapping you can use it like:
+    {"name": "pulseShape_FWS", "type": "[t]", "transform": search_pulse_shapes("FWS")}
+    """
     def search(value):
         result = next((item for item in value if item['description'] == description), None)
         if result:
             return result["values"]
         return None
     return search
-# Then in your mapping you can use it like:
-# {"name": "pulseShape_FWS", "type": "[t]", "transform": search_pulse_shapes("FWS")}
 
 
 
-# Formate une valeur avec un seul jeu de guillemets pour les chaînes de texte
+
 def format_value(value):
+    """
+    Formate une valeur avec un seul jeu de guillemets pour les chaînes de texte
+    Clean the value, only one pair of quotes for text strings
+    """
     if isinstance(value, str):
-        cleaned_value = value.strip('"')  # Supprime tous les guillemets autour
+        cleaned_value = value.strip('"')  # Remove the double quote around the data
         return f'"{cleaned_value}"'
     return str(value)  # Retourne les autres types sous forme de chaîne
 
-# Fonction pour transformer les noms de colonnes dynamiquement
 def transform_column_name(name):
+    """
+    Function pour transform dynamicately the column name
+"""
     return name.replace(".", "_").replace(" ", "_")
 
 def main(input_json, extra_data_file):
-    # Charger les fichiers JSON
+    # Loading the JSON files
 
     print("open:", input_json)
     print("extra:", extra_data_file)
@@ -99,7 +112,14 @@ def main(input_json, extra_data_file):
     log_file = os.path.join(output_images_dir, "log.json")
     log_file = os.path.abspath(log_file) # make absolute path
 
-    # Dictionnaire de mapping des colonnes principales
+    """
+    Mapping dictionnary
+    key is the json key
+    value is an object to define how to store and transform the data for ecotaxa
+        name: is the name of the column in ecotaxa
+        type: is the type of the column in ecotaxa
+        transform: is a function to transform the value before storing it, you can use a lambda function or a function to transform the value
+    """
     # column_mapping = {
     #     "filename": {"name": "sample_id", "type": "[t]", "transform": remove_extension},
     #     "nb_images": {"name": "img_rank", "type": "[f]", "transform": lambda _: 1},
@@ -143,7 +163,7 @@ def main(input_json, extra_data_file):
     "instrument.measurementResults.absolutePressure": {"name": "sample_measurementResults_absolutePressure", "type": "[f]", "transform": None},
     "instrument.measurementResults.differentialPressure": {"name": "sample_measurementResults_differential_pressure","type": "[f]","transform": None},
 
-
+    # commented because same data are too long to be stored in the colunms (more than 250 characters (limited by varstring))
     # "particles[].pulseShapes*FWS": {"name": "object_pulseShape_FWS","type": "[t]","transform":search_pulse_shapes("FWS")},
     # "particles[].pulseShapes*Sidewards_Scatter": {"name": "object_pulseShape_Sidewards_Scatter","type": "[t]","transform":search_pulse_shapes("Sidewards Scatter")},
     # "particles[].pulseShapes*Fl_Yellow": {"name": "object_pulseShape_Fl_Yellow","type": "[t]","transform":search_pulse_shapes("Fl Yellow")},
@@ -181,31 +201,31 @@ def main(input_json, extra_data_file):
     #         "transform": None,
     #     }
 
-    # Construction des colonnes finales
+    # Build the columns and types list
 
     files_in_zip = []
 
-    columns = ["img_file_name"] + list(extra_data.keys())  # Extra data en début
+    columns = ["img_file_name"] + list(extra_data.keys())  # Add extra data at the begin of the tsv line
     types = ["[t]"] + ["[t]" if isinstance(value, str) else "[f]" for value in extra_data.values()]
     seen_columns = set(columns)  # Éviter les doublons avec extra_data
 
     for key, mapping in column_mapping.items():
         # if mapping["name"] == None:
         if "name" not in mapping or mapping["name"] is None:
-            continue  # Ignorer les colonnes sans nom
+            continue  # Ignore column where name is undefined
         if mapping["name"] not in seen_columns:
             columns.append(mapping["name"])
             types.append(mapping["type"])
             seen_columns.add(mapping["name"])
 
-    # Log des particules sans images
+    # Array to log particles without image
     missing_images = []
 
-    # Construction des lignes
+    # Building tsv lines
     rows = []
     for particle in data["particles"]:
         if not particle["hasImage"]:
-            continue  # Ignorer les particules sans image
+            continue  # Ignore particles without image
 
         particle_id = particle["particleId"]
         pulseShapes = particle["pulseShapes"]
@@ -218,7 +238,7 @@ def main(input_json, extra_data_file):
                 files_in_zip.append(os.path.join(output_images_dir, image_file))
         else:
             missing_images.append(particle_id)
-            continue  # Passer à la particule suivante
+            continue  # go to next particle
 
         row = [image_file]  # img_file_name
         for value in extra_data.values():
@@ -229,7 +249,7 @@ def main(input_json, extra_data_file):
             print("Mapping:", mapping)
 
             if "name" not in mapping or mapping["name"] is None:
-                continue  # Ignorer les colonnes sans name défini
+                continue  # Ignore column with undefined name
 
             try:
                 if "." in key:
@@ -300,7 +320,7 @@ def main(input_json, extra_data_file):
     #             file_path = os.path.join(root, file)
     #             zip_file.write(file_path, arcname=os.path.basename(file_path))
 
-    # Écrire le fichier de log
+    # Write the log file
     with open(log_file, "w") as log:
         json.dump(missing_images, log, indent=4)
 
@@ -331,9 +351,9 @@ if __name__ == "__main__":
 
     print("-- main.py --")
 
-    parser = argparse.ArgumentParser(description="Analyse un fichier JSON pour générer un TSV et des images.")
-    parser.add_argument("input_json", help="Le chemin vers le fichier JSON à analyser.")
-    parser.add_argument("--extra", required=True, help="Le chemin vers le fichier JSON contenant les extra data.")
+    parser = argparse.ArgumentParser(description="Analyze JSON file to generate a folder containing the TSV file and the images.")
+    parser.add_argument("input_json", help="The path to the JSON file to analyze.")
+    parser.add_argument("--extra", required=True, help="The path to the JSON file containing the extra data. (at the moment name must be extra_data.json and aside the json file)")
     args = parser.parse_args()
 
     input_json = args.input_json
