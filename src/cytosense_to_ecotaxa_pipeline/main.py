@@ -5,7 +5,9 @@ import csv
 import argparse
 from datetime import datetime
 from zipfile import ZipFile
-
+from PIL import Image
+import numpy as np
+import matplotlib.pyplot as plt
 
 def remove_extension(value):
     """
@@ -74,6 +76,145 @@ def search_pulse_shapes(description):
         return None
     return search
 
+def search_pulse_shapes2(description, value):
+    """
+    Search in pulse value the section associated to description 
+    and return its values
+    """
+    result = next((item for item in value if item['description'] == description), None)
+    if result:
+        return result["values"]
+    return None
+
+
+
+def image_particle(particle_data):
+    max_y = len(particle_data)
+    max_x = 50
+
+    a = np.zeros((max_y, max_x), dtype=np.uint8)
+
+    y = 0
+    for pulse_shape in particle_data:
+        x = 0
+        print(len(particle_data))
+
+        for value in particle_data:
+            if x >= max_x:
+                break
+
+            a[y, x] = value
+            x = x + 1
+
+        y = y + 1
+    return a
+
+def draw_pulse_shape_old(pulse_data,description,image_path):
+
+    data = search_pulse_shapes2(description, pulse_data)
+
+    a = image_particle(data)
+    # Normalize to 0-1
+    a = (a - np.min(a)) / (np.max(a) - np.min(a))
+
+    a = a * (256 * 256 * 256 - 1)
+
+    red = a // (256**2)
+    green = (a // 256) % 256
+    blue = a % 256
+
+    rgb_image_array = np.stack((red, green, blue), axis=-1)
+
+    # Convert the 3D array into an image using Pillow
+    image = Image.fromarray(np.uint8(rgb_image_array))
+    image.save(image_path)
+
+
+
+def normalize_data(values):
+    """Normalizes data to the range [0, 1] using min-max scaling."""
+    return (values - np.min(values)) / (np.max(values) - np.min(values))
+
+def draw_pulse_shape(pulse_data, description, image_path, normalize= True):
+    """
+    Draws a pulse shape image from pulse data and saves it.
+
+    Args:
+        pulse_data (list): List of pulse shape dictionaries.
+        description (str): Description of the pulse shape to draw (e.g., "FWS").
+        image_path (str): Path to save the image.
+    """
+    values = next((pulse["values"] for pulse in pulse_data if pulse["description"] == description), None)
+
+    if values is None:
+        print(f"Warning: No pulse shape found with description '{description}'. Skipping image creation.")
+        return 
+    
+    if normalize:
+        values = normalize_data(values) # Normalize if requested
+
+    x = range(len(values))
+
+    fig, ax = plt.subplots(figsize=(10, 6))  # Adjust figure size as needed
+    ax.plot(x, values, marker="o", linestyle="-", ms=0.1)  # Keep marker size small
+    ax.set_title(f"{description}")
+    ax.set_xlabel("Time")  # Add axis labels
+    ax.set_ylabel("Value")
+
+    plt.tight_layout()
+    # plt.show()
+    plt.tight_layout()
+    plt.savefig(image_path)  # Save the figure to the specified path
+    plt.close(fig)  # Close the figure to free up resources
+
+
+
+
+def draw_pulse_shape__(pulse_data, description, image_path):
+    """
+    Draws a pulse shape image from pulse data and saves it.
+
+    Args:
+        pulse_data (list): List of pulse shape dictionaries.
+        description (str): Description of the pulse shape to draw (e.g., "FWS").
+        image_path (str): Path to save the image.
+    """
+    values = next((pulse["values"] for pulse in pulse_data if pulse["description"] == description), None)
+
+    if values is None:
+        print(f"Warning: No pulse shape found with description '{description}'. Skipping image creation.")
+        return  # Or raise an exception if this is an error condition.
+
+    max_x = len(values)  # Dynamic width based on pulse data
+    max_y = 1 # Constant height now
+
+    a = np.zeros((max_y, max_x), dtype=np.float32)
+    a[0, :] = values  # Populate the array with pulse data
+
+
+    # Normalize to 0-255 for 8-bit image
+    a = ((a - np.min(a)) / (np.max(a) - np.min(a)) * 255).astype(np.uint8)
+
+
+    # Create the grayscale image using Pillow
+    image = Image.fromarray(a, mode="L") # 'L' mode for grayscale.
+    image.save(image_path)
+
+
+
+def add_pulse_shapes(description):
+    """
+    Then in your mapping you can use it like:
+    {"name": "pulseShape_FWS", "type": "[t]", "transform": add_pulse_shapes("FWS")}
+    """
+    def add(value):
+        result = next((item for item in value if item['description'] == description), None)
+        if result:
+            result["values"].append(0)
+
+        draw_pulse_shape(value,path)
+        return value
+    return add
 
 
 
@@ -86,6 +227,27 @@ def format_value(value):
         cleaned_value = value.strip('"')  # Remove the double quote around the data
         return f'"{cleaned_value}"'
     return str(value)  # Retourne les autres types sous forme de chaîne
+
+def summarize_pulse_numpy(pulse_data_list, n_poly=10):
+    """
+    Summarizes a pulse shape using polynomial fitting with NumPy.
+
+    Args:
+        #pulse_data (np.ndarray): 1D NumPy array containing the pulse data.
+        pulse_data (List): array containing the pulse data.
+        n_poly (int): Degree of the polynomial fit.
+
+    Returns:
+        # np.ndarray: 1D NumPy array containing the polynomial coefficients.
+        List: array containing the polynomial coefficients.
+    """
+    pulse_data = np.array(pulse_data_list)
+    n = len(pulse_data)
+    x = np.linspace(1, n, n)  # Create x-values for the fit
+    poly = np.polynomial.polynomial.Polynomial.fit(x, pulse_data, deg=n_poly - 1)
+    coefficients = poly.convert().coef
+    return coefficients.tolist()
+
 
 def transform_column_name(name):
     """
@@ -165,6 +327,7 @@ def main(input_json, extra_data_file):
 
     # commented because same data are too long to be stored in the colunms (more than 250 characters (limited by varstring))
     # "particles[].pulseShapes*FWS": {"name": "object_pulseShape_FWS","type": "[t]","transform":search_pulse_shapes("FWS")},
+    # "particles[].pulseShapes*FWS": {"name": "object_pulseShape_FWS","type": "[t]","transform":add_pulse_shapes("FWS")},
     # "particles[].pulseShapes*Sidewards_Scatter": {"name": "object_pulseShape_Sidewards_Scatter","type": "[t]","transform":search_pulse_shapes("Sidewards Scatter")},
     # "particles[].pulseShapes*Fl_Yellow": {"name": "object_pulseShape_Fl_Yellow","type": "[t]","transform":search_pulse_shapes("Fl Yellow")},
     # "particles[].pulseShapes*Fl_Orange": {"name": "object_pulseShape_Fl_Orange","type": "[t]","transform":search_pulse_shapes("Fl Orange")},
@@ -229,7 +392,7 @@ def main(input_json, extra_data_file):
 
         particle_id = particle["particleId"]
         pulseShapes = particle["pulseShapes"]
-        print("pulseShapes:",pulseShapes)
+        # print("pulseShapes:", pulseShapes)
         image_data = next((img["base64"] for img in data["images"] if img["particleId"] == particle_id), None)
         if image_data:
             image_file = f"particle_{particle_id}.png"
@@ -240,62 +403,79 @@ def main(input_json, extra_data_file):
             missing_images.append(particle_id)
             continue  # go to next particle
 
-        row = [image_file]  # img_file_name
-        for value in extra_data.values():
-            row.append(format_value(value))
+        pulse_shape_file =  f"pulse_shape_{particle_id}.png"
+        pulse_shape_path = os.path.join(output_images_dir, pulse_shape_file)
+        with open(pulse_shape_path, "wb") as img_file:
+            image_data = draw_pulse_shape(pulseShapes, "FWS", pulse_shape_path)
+            # img_file.write(image_data)
+            files_in_zip.append(pulse_shape_path)
 
-        for key, mapping in column_mapping.items():
-            print("Key:", key)
-            print("Mapping:", mapping)
-
-            if "name" not in mapping or mapping["name"] is None:
-                continue  # Ignore column with undefined name
-
-            try:
-                if "." in key:
-                    print(f"Key: {key}, Value: {data.get(key, None)}")
-                    key_parts = key.split(".")
-                    # print(f"Key parts: {key_parts}")
-                #     value = data.get(key_parts[0], {}).get(key_parts[1], None)
-                #     print(f"Key parts: {key_parts}, Value: {value}")
-                # else:
-                #     value = data.get(key, None)
-               
-                    # current_obj = particle  # Start from the particle object
-                    current_obj = data  # Start from the particle object
-                    for part in key_parts:
-                        print(f"Current part: {part}")
-                        star = part.split("*")
-                        bracket = part.split("[")
-                        if len(star)>1: part = star[0]
-                        if len(bracket)>1: 
-                            part = bracket[0]
-                            # print(f"Bracket: part: {part}")
-                            if part == "particles":
-                                current_obj = particle
-                                # print("Particles -> " , current_obj)
-                            # current_obj = part
-                        else:
-                            current_obj = current_obj.get(part, {})
-                            # if part == "pulseShapes":
-                                # print("PulseShapes -> " , current_obj)
-                        # print(f"Current object: {current_obj}")
-
-
-
-                    value = current_obj if current_obj != {} else None
-                else:
-                    value = particle.get(key, None)
-
-
-                if mapping["transform"]:
-                    value = mapping["transform"](value)
-                    print(f"Transformed value: {value}")
-
+        def make_row(image_file, polynomial_fits=[]):
+            row = [image_file]  # img_file_name
+            for value in extra_data.values():
                 row.append(format_value(value))
-            except Exception as e:
-                row.append("ERREUR")
 
+            for key, mapping in column_mapping.items():
+                print("Key:", key)
+                print("Mapping:", mapping)
+
+                if "name" not in mapping or mapping["name"] is None:
+                    continue  # Ignore column with undefined name
+
+                try:
+                    if "." in key:
+                        print(f"Key: {key}, Value: {data.get(key, None)}")
+                        key_parts = key.split(".")
+                        # print(f"Key parts: {key_parts}")
+                    #     value = data.get(key_parts[0], {}).get(key_parts[1], None)
+                    #     print(f"Key parts: {key_parts}, Value: {value}")
+                    # else:
+                    #     value = data.get(key, None)
+                
+                        # current_obj = particle  # Start from the particle object
+                        current_obj = data  # Start from the particle object
+                        for part in key_parts:
+                            print(f"Current part: {part}")
+                            star = part.split("*")
+                            bracket = part.split("[")
+                            if len(star)>1: part = star[0]
+                            if len(bracket)>1: 
+                                part = bracket[0]
+                                # print(f"Bracket: part: {part}")
+                                if part == "particles":
+                                    current_obj = particle
+                                    # print("Particles -> " , current_obj)
+                                # current_obj = part
+                            else:
+                                current_obj = current_obj.get(part, {})
+                                # if part == "pulseShapes":
+                                    # print("PulseShapes -> " , current_obj)
+                            # print(f"Current object: {current_obj}")
+
+
+
+                        value = current_obj if current_obj != {} else None
+                    else:
+                        value = particle.get(key, None)
+
+
+                    if mapping["transform"]:
+                        value = mapping["transform"](value)
+                        print(f"Transformed value: {value}")
+
+                    row.append(format_value(value))
+                except Exception as e:
+                    row.append("ERREUR")
+
+            #TODO: add columns defining polynom coefficents of the pulse shape
+            # row.append(polynomial_fits)
+
+        #TODO: add columns defining polynom coefficents of the pulse shape
+        polynomial_fits = []
+
+        row = make_row(image_file, polynomial_fits)
+        rows.append(row)
+        row = make_row(pulse_shape_file, polynomial_fits)
         rows.append(row)
 
     # Écrire le fichier TSV
