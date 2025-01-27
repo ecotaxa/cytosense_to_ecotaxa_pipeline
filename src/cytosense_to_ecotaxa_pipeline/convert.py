@@ -21,34 +21,34 @@ def get_cyz2json_path():
     
     return str(binary_path)
 
-def create_default_extra_data(input_path):
-    """
-    Create a default extra_data.json file if none exists
+# def create_default_extra_data(input_path):
+#     """
+#     Create a default extra_data.json file if none exists
     
-    Args:
-        input_file (Path): Path to the input .cyz file
-    Returns:
-        Path: Path to the extra data JSON file
-    """
-    extra_data = {
-        "cruise": "",
-        "ship": "",
-        "station": "",
-        "bottle": "",
-        "latitude": "",
-        "longitude": "",
-        "depth": ""
-    }
+#     Args:
+#         input_file (Path): Path to the input .cyz file
+#     Returns:
+#         Path: Path to the extra data JSON file
+#     """
+#     extra_data = {
+#         "cruise": "",
+#         "ship": "",
+#         "station": "",
+#         "bottle": "",
+#         "latitude": "",
+#         "longitude": "",
+#         "depth": ""
+#     }
     
-    extra_file = input_path.parent / 'extra_data.json'
-    if not extra_file.exists():
-        with open(extra_file, 'w') as f:
-            json.dump(extra_data, f, indent=2)
-        print(f"Created default extra_data.json at {extra_file}")
-        print("Please edit this file with your metadata before processing.")
-        sys.exit(0)
+#     # extra_file = input_path.parent / 'extra_data.json'
+#     if not extra_file.exists():
+#         with open(extra_file, 'w') as f:
+#             json.dump(extra_data, f, indent=2)
+#         print(f"Created default extra_data.json at {extra_file}")
+#         print("Please edit this file with your metadata before processing.")
+#         sys.exit(0)
     
-    return extra_file
+#     return extra_file
 
 def process_file(input_file, extra_data): #, output_data):
     """
@@ -70,7 +70,7 @@ def process_file(input_file, extra_data): #, output_data):
     
     # Get paths
     json_output = input_path.with_suffix('.json')
-    extra_data = create_default_extra_data(input_path)
+    # extra_data = create_default_extra_data(input_path)
     # extra_data = Path(extra_data).resolve()
     output_data = input_path.with_suffix('.tsv')
     cyz2json = get_cyz2json_path()
@@ -149,8 +149,12 @@ def main_cli():
     print("input_file:",input_file)
 
     # extra_file")
+    extra_file_cmd = sys.argv[2]
+    if ( extra_file_cmd != "--extra"):
+        print("Error: --extra argument is missing")
+        sys.exit(1)
 
-    extra_file = sys.argv[2]
+    extra_file = sys.argv[3]
     if not is_absolute(extra_file):
         extra_file = os.path.abspath(extra_file)
     print("extra_file:",extra_file)
