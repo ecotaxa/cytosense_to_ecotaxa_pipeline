@@ -25,6 +25,41 @@ sudo ./install.sh --github
 ```
 
 ### Installation from local files
+
+#### Manual mode
+```
+python3 -m venv test_venv    
+source test_venv/bin/activate
+pip install --upgrade pip
+pip install six matplotlib Pillow numpy
+
+# necessary to install the cyz2json binary but need to copy the main.py and/or pipeline.py files in the venv
+# LATEST_TAG=$(curl -s "https://api.github.com/repos/ecotaxa/cytosense_to_ecotaxa_pipeline/releases/latest" | jq -r '.tag_name')
+# TAG_WITHOUT_V="${LATEST_TAG#v}"
+# PLATFORM_TAG="macosx_10_9_x86_64"
+# PLATFORM_TAG="macosx_11_0_arm64"
+# WHEEL_FILE_NAME="cytosense_to_ecotaxa_pipeline-${TAG_WITHOUT_V}-py3-none-${PLATFORM_TAG}.whl"
+# WHEEL_URL="https://github.com/ecotaxa/cytosense_to_ecotaxa_pipeline/releases/download/${LATEST_TAG}/${WHEEL_FILE_NAME}"
+# WHEEL_FILE="/tmp/${WHEEL_FILE_NAME}"
+# curl -s -L "$WHEEL_URL" -o "$WHEEL_FILE"
+# pip install "$WHEEL_FILE"
+# SITE_PACKAGES_PATH=$(python -c "import site; print(site.getsitepackages()[0])")
+# sudo ln -s "$SITE_PACKAGES_PATH/cytosense_to_ecotaxa_pipeline/bin/Cyz2Json" $PWD/test_venv/bin/Cyz2Json
+# sudo ln -s "$SITE_PACKAGES_PATH/cytosense_to_ecotaxa_pipeline/pipeline.py" $PWD/test_venv/bin/pipeline.py
+# sudo ln -s "$SITE_PACKAGES_PATH/cytosense_to_ecotaxa_pipeline/main.py" $PWD/test_venv/bin/main.py
+# export LD_LIBRARY_PATH=$PWD/test_venv/lib/python${PYTHON_VERSION}/site-packages/cytosense_to_ecotaxa_pipeline/lib:${LD_LIBRARY_PATH}
+# sudo chmod ago+x $PWD/test_venv/lib/python${PYTHON_VERSION}/site-packages/cytosense_to_ecotaxa_pipeline/bin/*
+
+# without cyz2json binary
+# make data folder
+# paste in the data folder the json file
+# add an extra line in the json file to add the cytosense data
+
+# run the pipeline
+python3 main.py --extra ../../data/extra_data.json ../../data/Deployment\ 1\ 2024-07-18\ 21h12.json
+
+```
+
 need to install cyz2json in the repo before, there are some bugs
 ```bash
 sudo ./install.sh
@@ -46,9 +81,9 @@ or if you do not want use xattr you need to go in Systems Settings > Security & 
 
 # Run the pipeline
 
+## using the command installed by the install.sh script
 ```bash
-/usr/local/bin/cytosense_to_ecotaxa_pipeline Deployment\ 1\ 2024-07-18\ 21h12.cyz 
---extra extra_data.json
+/usr/local/bin/cytosense_to_ecotaxa_pipeline the_cyz_files_to_import.tsv
 ```
 the result will be in the the folder where you run the command
 you will find
@@ -56,9 +91,18 @@ you will find
 + the images folder (with ecotaxa tsv file in it)
 + and the zip file, you could upload it to EcoTaxa
 
+a folder named extra_data will be create with the extra data json files
+
+## run pipeline.py
+```
+cd src/cytosense_to_ecotaxa_pipeline
+ln -s /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json cyz2json
+(venv) python pipeline.py the_cyz_files_to_import.tsv
+```
+
 # run only main.py
 ```
-(venv) python Deployment\ 1\ 2024-07-18\ 21h12.json --extra extra_data.json
+(venv) python main.py Deployment\ 1\ 2024-07-18\ 21h12.json --extra extra_data.json
 ```
 
 # Uninstall
@@ -86,14 +130,42 @@ and release in : https://github.com/ecotaxa/cytosense_to_ecotaxa_pipeline/releas
 
 # Bug
 
-+ during install, need to find the version of Python used in the venv
-need to make the links to the cyz2json binary and the python scripts
-
-+ extra_data.json : not other name allowed
++ to discover
 
 
 # Make your mapping
 
+
+## the tsv (for pipeline.py)
+
+the tsv file is composed by two parts: the first part is the header describing the bioODV features and the second part is the data.
+
+The header is composed by 4 columns.
++ the 1st column is //
++ the 2nd column contains the name of the column in the tsv (ie. a column name from the 1st line of the data part))
++ the 3rd and the 4th columns are the bioODV ampping.
++ the 3rd column contains the bioODV object name
++ the 4th column contains the bioODV units used by the value
+
+```TSV
+//  column_name  bioODV_name  bioODV_unit
+```
+
+sample
+```TSV
+//  object_lat   SDN:P01::STRTXLAT  SDN:P06::UUUU
+//  object_lon   SDN:P01::STRTXLON  SDN:P06::UUUU
+//  object_date  SDN:P01::STRT8601  SDN:P06::UUUU
+file    object_lat  object_lon  object_date object_time object_depth_min    object_depth_max
+Deployment 1 2024-07-18 21h12.cyz   42  7.2 2019-04-17  10:00   10  100
+```
+
+
+The data part is compoposed by
++ a 1st line that contains the columun name, where the 1st column is the path to the cyz file, the other columns are the extra data to add to the ecotaxa tsv file
++ the others lines are the data
+
+## the JSON mapping (for main.py)
 To update your mapping edit main.py, and search column_mapping variable. This is a dictionary where the key is the path to a JSON Cytosense feature 
 and the value is an object to define how to store and transform the data for ecotaxa. The object have 3 features:
     + name: is the name of the column in ecotaxa
@@ -119,7 +191,13 @@ to read feature, that are define in the particle array, you need to use square b
 To get particles[].pulseShapes.FWS, in fact you need to use a function to find the data on it
 
 ```JSON
-"particles[].pulseShapes*FWS": {"name": "object_pulseShape_FWS","type": "[t]","transform":search_pulse_shapes("FWS")}
+{
+    "particles[].pulseShapes*FWS": {
+        "name": "object_pulseShape_FWS",
+        "type": "[t]",
+        "transform":search_pulse_shapes("FWS")
+    }
+}
 ```
 
 search_pulse_shapes("FWS") is a function that search for the feature FWS in the pulseShapes array and return the value you could add some processing in the sub function for example to convert the values in this case into a polynomial function or to convert the values to a string (take care to the data size string are limited to 250 characters)
@@ -155,4 +233,65 @@ or
     "instrument.measurementResults.start*date": {"name": "sample_measurementResults_Start", "type": "[t]", "transform": extract_date_utc},
     "instrument.measurementResults.start*hour": {"name": "sample_measurementResults_StartH", "type": "[t]", "transform": extract_time_utc},
  ```
+
+
+# The json extra data for ecotaxa tsv file used by main.py
+
+The json file is a list of object, each object describe the data to add to the ecotaxa tsv file.
+and could also contain the bioODV mapping.
+
+a simple extra_data.json file could be:
+```JSON
+{
+    "object_lat": {
+        "value": "42",
+    },
+    "object_lon": {
+        "value": "7.2",
+    },
+    "object_date": {
+        "value": "2019-04-17",
+    },
+    "object_time": {
+        "value": "10:00",
+    },
+    "object_depth_min": {
+        "value": "10",
+    },
+    "object_depth_max": {
+        "value": "100",
+    }
+}
+```
+
+a more complex example with the bioODV mapping
+```JSON
+{
+    "object_lat": {
+        "value": "42",
+        "object": "SDN:P01::STRTXLAT",
+        "units": "SDN:P06::UUUU"
+    },
+    "object_lon": {
+        "value": "7.2",
+        "object": "SDN:P01::STRTXLON",
+        "units": "SDN:P06::UUUU"
+    },
+    "object_date": {
+        "value": "2019-04-17",
+        "object": "SDN:P01::STRT8601",
+        "units": "SDN:P06::UUUU"
+    },
+    "object_time": {
+        "value": "10:00",
+    },
+    "object_depth_min": {
+        "value": "10",
+    },
+    "object_depth_max": {
+        "value": "100",
+    }
+}
+
+"object" and "units" features are optional.
 
