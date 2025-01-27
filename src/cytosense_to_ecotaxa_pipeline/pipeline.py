@@ -92,11 +92,11 @@ def main(tsv_file, output_dir):
 
 def call_pipeline_script(file_path, json_file_path):
     """
-        call pipeline.py with the cyzJSON file and the extra_data JSON file to generate the TSV file for Ecotaxa
+        call convert.py with the cyzJSON file and the extra_data JSON file to generate the TSV file for Ecotaxa
     """
-    print(f"Called main.py with: {file_path} --extra {json_file_path}")
+    print(f"Called convert.py with: {file_path} --extra {json_file_path}")
     try:
-        subprocess.run([sys.executable, 'main.py', file_path, '--extra', json_file_path], check=True)
+        subprocess.run([sys.executable, 'convert.py', file_path, '--extra', json_file_path], check=True)
         print(f"Called main.py with: {file_path} and {json_file_path}")
     except subprocess.CalledProcessError as e:
         print(f"Error while calling main.py: {e}")
