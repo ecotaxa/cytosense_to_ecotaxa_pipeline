@@ -124,9 +124,17 @@ def is_absolute(path):
     else:
         return is_absolute_unix(path)
 
+def nb_args_expected():
+    """Returns the number of arguments the script expect, depending on the OS use"""
+    if os.name == 'nt':
+        return 3
+    else:
+        return 4
+
+
 def main_cli():
     """Command line interface entry point"""
-    if len(sys.argv) != 4:
+    if len(sys.argv) != nb_args_expected():
         print("Usage: cytosense_to_ecotaxa_pipeline <input_cyz_file> --extra <extra_data.json>") # --output <output_data>")
         sys.exit(1)
 
