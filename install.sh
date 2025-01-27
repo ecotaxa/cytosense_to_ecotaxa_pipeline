@@ -142,9 +142,9 @@ sudo ln -s "$SITE_PACKAGES_PATH/cytosense_to_ecotaxa_pipeline/pipeline.py" /opt/
 sudo ln -s "$SITE_PACKAGES_PATH/cytosense_to_ecotaxa_pipeline/main.py" /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py
 
 
-export LD_LIBRARY_PATH=/opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/lib
+export LD_LIBRARY_PATH=/opt/cytosense_to_ecotaxa_pipeline_venv/lib/python${PYTHON_VERSION}/site-packages/cytosense_to_ecotaxa_pipeline/lib:${LD_LIBRARY_PATH}
 
-sudo chmod ago+x /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/bin/*
+sudo chmod ago+x /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python${PYTHON_VERSION}/site-packages/cytosense_to_ecotaxa_pipeline/bin/*
 
 desactivate
 
