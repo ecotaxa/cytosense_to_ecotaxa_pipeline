@@ -62,6 +62,7 @@ $sitePackagesPath = & python -c "import site; print(site.getsitepackages()[0])"
 # Copy-Item -Path "$sitePackagesPath\cytosense_to_ecotaxa_pipeline\bin\Cyz2Json.exe" -Destination "$installDir\Cyz2Json.exe"
 Copy-Item -Path "$sitePackagesPath\cytosense_to_ecotaxa_pipeline\bin" -Destination "$installDir\bin" -Recurse -Force
 Copy-Item -Path "$sitePackagesPath\cytosense_to_ecotaxa_pipeline\pipeline.py" -Destination "$installDir\pipeline.py"
+Copy-Item -Path "$sitePackagesPath\cytosense_to_ecotaxa_pipeline\convert.py" -Destination "$installDir\convert.py"
 Copy-Item -Path "$sitePackagesPath\cytosense_to_ecotaxa_pipeline\main.py" -Destination "$installDir\main.py"
 
 
