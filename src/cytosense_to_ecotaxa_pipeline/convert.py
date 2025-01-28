@@ -92,7 +92,8 @@ def process_file(input_file, extra_data): #, output_data):
     # Run main.py with the generated JSON
     print("Processing with main.py...")
     try:
-        main_script = Path('/opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py')
+        # main_script = Path('/opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py')
+        main_script = Path('main.py')
         python_exe = Path(sys.executable)
         
         subprocess.run([
