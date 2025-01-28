@@ -27,13 +27,15 @@ file,object_lat,object_lon,object_date,object_time,object_depth_min,object_depth
 Deployment 1 2024-07-18 21h12.cyz,42,7.2,2019-04-17,10:00,10,100
 """
 
+delimiter='\t'
+
 def main(tsv_file, output_dir):
     try:
         # Make folder to store the extra_data JSON files
         os.makedirs(output_dir, exist_ok=True)
 
         with open(tsv_file, 'r', encoding='utf-8') as tsv:
-            reader = csv.reader(tsv, delimiter=',')
+            reader = csv.reader(tsv, delimiter=delimiter)
             header_mapping = []  # header lines
 
             column_headers = None  # The column headers
@@ -65,9 +67,21 @@ def main(tsv_file, output_dir):
                         json_data = {}
                         for i, value in enumerate(row[1:], start=1):
                             print("Column:", column_headers[i])
-                            json_data[column_headers[i]] = {
-                                'value': value
-                            }
+                            # json_data[column_headers[i]] = {
+                            #     'value': value 
+                            # }
+                                # Try to convert to number if possible
+                            try:
+                                numeric_value = float(value)
+                                json_data[column_headers[i]] = {
+                                    'value': numeric_value
+                                }
+                            except ValueError:
+                                # Keep as string if not a number
+                                json_data[column_headers[i]] = {
+                                    'value': value
+                                }
+                                
                             # render the bioODV description optionally
                             # 
                             header = next((x for x in header_mapping if x['column_name'] == column_headers[i]), None)
@@ -80,6 +94,7 @@ def main(tsv_file, output_dir):
 
                         # Save the JSON data to a file
                         with open(json_file_path, 'w', encoding='utf-8') as json_file:
+                            print("Saving {json_file_path}")
                             json.dump(json_data, json_file, indent=4, ensure_ascii=False)
 
                         print(f"JSON file created: {json_file_path}")
@@ -106,9 +121,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Analyze a TSV file containing the list of cyz file with the extra data and the BioODV mapping")
     parser.add_argument("tsv_file", help="The path to the JSON file to analyze.")
+    parser.add_argument("delimiter", help="Optional delimiter for the TSV file.")
     args = parser.parse_args()
 
     tsv_file = args.tsv_file
+    if args.delimiter != None:
+        delimiter = args.delimiter
 
     main(tsv_file, output_dir)
 
