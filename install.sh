@@ -139,6 +139,7 @@ sudo /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pip install "$WHEEL_FILE" || { 
 # sudo ln -s  /opt/cytosense_to_ecotaxa_pipeline_venv/lib/python3.13/site-packages/cytosense_to_ecotaxa_pipeline/main.py /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py
 sudo ln -s "$SITE_PACKAGES_PATH/cytosense_to_ecotaxa_pipeline/bin/Cyz2Json" /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json
 sudo ln -s "$SITE_PACKAGES_PATH/cytosense_to_ecotaxa_pipeline/pipeline.py" /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py
+sudo ln -s "$SITE_PACKAGES_PATH/cytosense_to_ecotaxa_pipeline/convert.py" /opt/cytosense_to_ecotaxa_pipeline_venv/bin/convert.py
 sudo ln -s "$SITE_PACKAGES_PATH/cytosense_to_ecotaxa_pipeline/main.py" /opt/cytosense_to_ecotaxa_pipeline_venv/bin/main.py
 
 
