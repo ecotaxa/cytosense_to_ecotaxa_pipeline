@@ -4,6 +4,7 @@ import base64
 import csv
 import argparse
 from datetime import datetime
+import sys
 from zipfile import ZipFile
 from PIL import Image
 import numpy as np
@@ -170,51 +171,51 @@ def draw_pulse_shape(pulse_data, description, image_path, normalize= True):
 
 
 
-def draw_pulse_shape__(pulse_data, description, image_path):
-    """
-    Draws a pulse shape image from pulse data and saves it.
+# def draw_pulse_shape__(pulse_data, description, image_path):
+#     """
+#     Draws a pulse shape image from pulse data and saves it.
 
-    Args:
-        pulse_data (list): List of pulse shape dictionaries.
-        description (str): Description of the pulse shape to draw (e.g., "FWS").
-        image_path (str): Path to save the image.
-    """
-    values = next((pulse["values"] for pulse in pulse_data if pulse["description"] == description), None)
+#     Args:
+#         pulse_data (list): List of pulse shape dictionaries.
+#         description (str): Description of the pulse shape to draw (e.g., "FWS").
+#         image_path (str): Path to save the image.
+#     """
+#     values = next((pulse["values"] for pulse in pulse_data if pulse["description"] == description), None)
 
-    if values is None:
-        print(f"Warning: No pulse shape found with description '{description}'. Skipping image creation.")
-        return  # Or raise an exception if this is an error condition.
+#     if values is None:
+#         print(f"Warning: No pulse shape found with description '{description}'. Skipping image creation.")
+#         return  # Or raise an exception if this is an error condition.
 
-    max_x = len(values)  # Dynamic width based on pulse data
-    max_y = 1 # Constant height now
+#     max_x = len(values)  # Dynamic width based on pulse data
+#     max_y = 1 # Constant height now
 
-    a = np.zeros((max_y, max_x), dtype=np.float32)
-    a[0, :] = values  # Populate the array with pulse data
-
-
-    # Normalize to 0-255 for 8-bit image
-    a = ((a - np.min(a)) / (np.max(a) - np.min(a)) * 255).astype(np.uint8)
+#     a = np.zeros((max_y, max_x), dtype=np.float32)
+#     a[0, :] = values  # Populate the array with pulse data
 
 
-    # Create the grayscale image using Pillow
-    image = Image.fromarray(a, mode="L") # 'L' mode for grayscale.
-    image.save(image_path)
+#     # Normalize to 0-255 for 8-bit image
+#     a = ((a - np.min(a)) / (np.max(a) - np.min(a)) * 255).astype(np.uint8)
+
+
+#     # Create the grayscale image using Pillow
+#     image = Image.fromarray(a, mode="L") # 'L' mode for grayscale.
+#     image.save(image_path)
 
 
 
-def add_pulse_shapes(description):
-    """
-    Then in your mapping you can use it like:
-    {"name": "pulseShape_FWS", "type": "[t]", "transform": add_pulse_shapes("FWS")}
-    """
-    def add(value):
-        result = next((item for item in value if item['description'] == description), None)
-        if result:
-            result["values"].append(0)
+# def add_pulse_shapes(description):
+#     """
+#     Then in your mapping you can use it like:
+#     {"name": "pulseShape_FWS", "type": "[t]", "transform": add_pulse_shapes("FWS")}
+#     """
+#     def add(value):
+#         result = next((item for item in value if item['description'] == description), None)
+#         if result:
+#             result["values"].append(0)
 
-        draw_pulse_shape(value,path)
-        return value
-    return add
+#         draw_pulse_shape(value, path)
+#         return value
+#     return add
 
 
 
@@ -223,6 +224,7 @@ def format_value(value):
     Formate une valeur avec un seul jeu de guillemets pour les chaînes de texte
     Clean the value, only one pair of quotes for text strings
     """
+    # print("format_value:",value)
     if isinstance(value, str):
         cleaned_value = value.strip('"')  # Remove the double quote around the data
         return f'"{cleaned_value}"'
@@ -255,17 +257,114 @@ def transform_column_name(name):
 """
     return name.replace(".", "_").replace(" ", "_")
 
+def gen_bioODV_header_from_extra(mapping, headers):
+    print("BioODV header generating from extra data")
+    for key, value in mapping.items():
+        # print(f"bioODV {key} {value}")
+        if 'object' in value and 'units' in value:
+            row=f"<subject>{key}</subject>"
+            row+=f"<object>{value['object']}</object>"
+            row+=f"<units>{value['units']}</units>"
+            headers.append(row)
+    return headers
+    pass
+
+def gen_bioODV_header_from_mapping(mapping,headers):
+    print("BioODV header generating from mapping")
+    for key, value in mapping.items():
+        # print(f"bioODV {key} {value}")
+        if 'bioodv' in value:
+            row=f"<subject>{value['name']}</subject>"
+            row+=f"<object>{value['bioodv']['object']}</object>"
+            row+=f"<units>{value['bioodv']['units']}</units>"
+            headers.append(row)
+    return headers
+
+
+def make_row(particle, data, image_file, img_rank, column_mapping, extra_data, polynomial_fits=[]):
+    row = [image_file, img_rank]  # img_file_name
+    for value in extra_data.values():
+        row.append(format_value(value['value']))
+
+    for key, mapping in column_mapping.items():
+        # print("Key:", key)
+        # print("Mapping:", mapping)
+
+        if "name" not in mapping or mapping["name"] is None:
+            continue  # Ignore column with undefined name
+
+        try:
+            if "." in key:
+                # print(f"Key: {key}, Value: {data.get(key, None)}")
+                key_parts = key.split(".")
+                # print(f"Key parts: {key_parts}")
+            #     value = data.get(key_parts[0], {}).get(key_parts[1], None)
+            #     print(f"Key parts: {key_parts}, Value: {value}")
+            # else:
+            #     value = data.get(key, None)
+        
+                # current_obj = particle  # Start from the particle object
+                current_obj = data  # Start from the particle object
+                for part in key_parts:
+                    # print(f"Current part: {part}")
+                    star = part.split("*")
+                    bracket = part.split("[")
+                    if len(star)>1: part = star[0]
+                    if len(bracket)>1: 
+                        part = bracket[0]
+                        # print(f"Bracket: part: {part}")
+                        if part == "particles":
+                            current_obj = particle
+                            # print("Particles -> " , current_obj)
+                        # current_obj = part
+                    else:
+                        current_obj = current_obj.get(part, {})
+                        # if part == "pulseShapes":
+                            # print("PulseShapes -> " , current_obj)
+                    # print(f"Current object: {current_obj}")
+
+
+
+                value = current_obj if current_obj != {} else None
+            else:
+                value = particle.get(key, None)
+
+
+            if mapping["transform"]:
+                value = mapping["transform"](value)
+                # print(f"Transformed value: {value}")
+
+            row.append(format_value(value))
+        except Exception as e:
+            row.append("ERROR")
+
+    return row
+
+
+
 def main(input_json, extra_data_file):
     # Loading the JSON files
 
     print("open:", input_json)
     print("extra:", extra_data_file)
 
-    with open(input_json, "r") as f:
-        data = json.load(f)
+    try:
+        with open(input_json, "r") as f:
+            data = json.load(f)
+    except json.decoder.JSONDecodeError as e:
+        print(f"Invalid JSON format in {input_json}")
+        print("Error details:", str(e))
+        print(f"Please check your cyz.json file.")
+        sys.exit(1)
 
-    with open(extra_data_file, "r") as f:
-        extra_data = json.load(f)
+    try:
+        with open(extra_data_file, "r") as f:
+            extra_data = json.load(f)
+    except json.decoder.JSONDecodeError as e:
+        print(f"Invalid JSON format in {extra_data_file}")
+        print("Error details:", str(e))
+        print("Please check for trailing commas or other JSON syntax errors")
+        sys.exit(1)
 
     output_images_dir = "images"
     os.makedirs(output_images_dir, exist_ok=True)
@@ -281,6 +380,10 @@ def main(input_json, extra_data_file):
         name: is the name of the column in ecotaxa
         type: is the type of the column in ecotaxa
         transform: is a function to transform the value before storing it, you can use a lambda function or a function to transform the value
+        bioodv: the bioODV object
+          bioodv.subject: is tsv column name [NOT NEEDED] = value.name
+          bioodv.object: is the SDN name
+          bioodv.units: is the SDN units
     """
     # column_mapping = {
     #     "filename": {"name": "sample_id", "type": "[t]", "transform": remove_extension},
@@ -303,8 +406,11 @@ def main(input_json, extra_data_file):
 
 
     "instrument.measurementSettings.name": {"name": "acq_measurementSettings_name", "type": "[t]", "transform": None},
-    "instrument.measurementSettings.duration": {"name": "acq_measurementSettings_duration", "type": "[f]", "transform": None},
-    "instrument.measurementSettings.pumpSpeed": {"name": "acq_measurementSettings_pumpSpeed", "type": "[f]", "transform": None},
+    "instrument.measurementSettings.duration": {"name": "acq_measurementSettings_duration", "type": "[f]", "transform": None, "bioodv": {
+        "object":"SDN:P01::AZDRZZ01",
+        "units":"SDN:P06:UMIN"
+    }},
+    "instrument.measurementSettings.CytoSettings.SamplePompSpeed": {"name": "acq_measurementSettings_pumpSpeed", "type": "[f]", "transform": None},
     "instrument.measurementSettings.triggerChannel": {"name": "acq_measurementSettings_triggerChannel", "type": "[t]", "transform": None},
     "instrument.measurementSettings.triggerLevel": {"name": "acq_measurementSettings_triggerLevel", "type": "[f]", "transform": None},
     "instrument.measurementSettings.smartTrigger": {"name": "acq_measurementSettings_smartTrigger", "type": "[t]", "transform": lambda v: "true" if v else "false"},
@@ -325,7 +431,7 @@ def main(input_json, extra_data_file):
     "instrument.measurementResults.absolutePressure": {"name": "sample_measurementResults_absolutePressure", "type": "[f]", "transform": None},
     "instrument.measurementResults.differentialPressure": {"name": "sample_measurementResults_differential_pressure","type": "[f]","transform": None},
 
-    # commented because same data are too long to be stored in the colunms (more than 250 characters (limited by varstring))
+    # commented because same data are too long to be stored in the colunms (more than 250 characters (limited in Ecotaxa by varstring))
     # "particles[].pulseShapes*FWS": {"name": "object_pulseShape_FWS","type": "[t]","transform":search_pulse_shapes("FWS")},
     # "particles[].pulseShapes*FWS": {"name": "object_pulseShape_FWS","type": "[t]","transform":add_pulse_shapes("FWS")},
     # "particles[].pulseShapes*Sidewards_Scatter": {"name": "object_pulseShape_Sidewards_Scatter","type": "[t]","transform":search_pulse_shapes("Sidewards Scatter")},
@@ -335,12 +441,11 @@ def main(input_json, extra_data_file):
     # "particles[].pulseShapes*Curvature": {"name": "object_pulseShape_Curvature","type": "[t]","transform":search_pulse_shapes("Curvature")},
     # "particles[].pulseShapes*Forward_Scatter_Left": {"name": "object_pulseShape_Forward_Scatter_Left","type": "[t]","transform":search_pulse_shapes("Forward Scatter Left")},
     # "particles[].pulseShapes*Forward_Scatter_Right": {"name": "object_pulseShape_Forward_Scatter_Right","type": "[t]","transform":search_pulse_shapes("Forward Scatter Right")},
-
 }
     
 
 
-    # # Ajouter les colonnes dynamiques pour measurementSettings et measurementResults
+    # # Add les dynamics column FOR measurementSettings AND measurementResults features
     # dynamic_keys = ["measurementSettings", "measurementResults"]
     # for key in dynamic_keys:
     #     if key in data["instrument"]:
@@ -352,7 +457,7 @@ def main(input_json, extra_data_file):
     #                 "transform": None,
     #             }
 
-    # # Ajouter les colonnes de pulseShapes
+    # # add the pulseShapes columns
     # pulse_shapes = data["instrument"]["channels"]
     # for channel in pulse_shapes:
     #     print(f"Processing channel: {channel['description']}")
@@ -368,8 +473,14 @@ def main(input_json, extra_data_file):
 
     files_in_zip = []
 
-    columns = ["img_file_name"] + list(extra_data.keys())  # Add extra data at the begin of the tsv line
-    types = ["[t]"] + ["[t]" if isinstance(value, str) else "[f]" for value in extra_data.values()]
+    bioODV_header = [
+        "SDN_PARAMETER_MAPPING"
+    ]
+    bioODV_header = gen_bioODV_header_from_mapping(column_mapping, bioODV_header)
+    bioODV_header = gen_bioODV_header_from_extra(extra_data, bioODV_header)
+    # print(bioODV_header)
+    columns = ["img_file_name","img_rank"] + list(extra_data.keys())  # Add extra data at the begin of the tsv line
+    types = ["[t]","[f]"] + ["[t]" if isinstance(value['value'], str) else "[f]" for value in extra_data.values()]
     seen_columns = set(columns)  # Éviter les doublons avec extra_data
 
     for key, mapping in column_mapping.items():
@@ -391,6 +502,7 @@ def main(input_json, extra_data_file):
             continue  # Ignore particles without image
 
         particle_id = particle["particleId"]
+        print(f"\rProcessing particle: {particle_id}", end='', flush=True)
         pulseShapes = particle["pulseShapes"]
         # print("pulseShapes:", pulseShapes)
         image_data = next((img["base64"] for img in data["images"] if img["particleId"] == particle_id), None)
@@ -410,80 +522,32 @@ def main(input_json, extra_data_file):
             # img_file.write(image_data)
             files_in_zip.append(pulse_shape_path)
 
-        def make_row(image_file, polynomial_fits=[]):
-            row = [image_file]  # img_file_name
-            for value in extra_data.values():
-                row.append(format_value(value))
-
-            for key, mapping in column_mapping.items():
-                print("Key:", key)
-                print("Mapping:", mapping)
-
-                if "name" not in mapping or mapping["name"] is None:
-                    continue  # Ignore column with undefined name
-
-                try:
-                    if "." in key:
-                        print(f"Key: {key}, Value: {data.get(key, None)}")
-                        key_parts = key.split(".")
-                        # print(f"Key parts: {key_parts}")
-                    #     value = data.get(key_parts[0], {}).get(key_parts[1], None)
-                    #     print(f"Key parts: {key_parts}, Value: {value}")
-                    # else:
-                    #     value = data.get(key, None)
-                
-                        # current_obj = particle  # Start from the particle object
-                        current_obj = data  # Start from the particle object
-                        for part in key_parts:
-                            print(f"Current part: {part}")
-                            star = part.split("*")
-                            bracket = part.split("[")
-                            if len(star)>1: part = star[0]
-                            if len(bracket)>1: 
-                                part = bracket[0]
-                                # print(f"Bracket: part: {part}")
-                                if part == "particles":
-                                    current_obj = particle
-                                    # print("Particles -> " , current_obj)
-                                # current_obj = part
-                            else:
-                                current_obj = current_obj.get(part, {})
-                                # if part == "pulseShapes":
-                                    # print("PulseShapes -> " , current_obj)
-                            # print(f"Current object: {current_obj}")
-
-
-
-                        value = current_obj if current_obj != {} else None
-                    else:
-                        value = particle.get(key, None)
-
-
-                    if mapping["transform"]:
-                        value = mapping["transform"](value)
-                        print(f"Transformed value: {value}")
-
-                    row.append(format_value(value))
-                except Exception as e:
-                    row.append("ERREUR")
-
             #TODO: add columns defining polynom coefficents of the pulse shape
             # row.append(polynomial_fits)
 
         #TODO: add columns defining polynom coefficents of the pulse shape
         polynomial_fits = []
 
-        row = make_row(image_file, polynomial_fits)
+        row = make_row(particle, data, image_file, 1, column_mapping, extra_data, polynomial_fits)
         rows.append(row)
-        row = make_row(pulse_shape_file, polynomial_fits)
+        row = make_row(particle, data, pulse_shape_file, 2, column_mapping, extra_data, polynomial_fits)
         rows.append(row)
+
+    print() # to invalid the progress bar
 
     # Écrire le fichier TSV
     with open(output_tsv, "w", newline="") as tsv_file:
+        for row in bioODV_header:
+            # tsv_file.write("\t".join(row) + "\n")
+            tsv_file.write("//"+ row + "\n")
+
         tsv_file.write("\t".join(columns) + "\n")
         tsv_file.write("\t".join(types) + "\n")
         for row in rows:
-            tsv_file.write("\t".join(row) + "\n")
+            # print("Row:", row)
+            # tsv_file.write("\t".join(row) + "\n")
+            tsv_file.write("\t".join(str(item) for item in row) + "\n")
+
     files_in_zip.append(output_tsv)
 
     archive_filename = os.path.splitext(input_json)[0] + '.zip'
@@ -501,12 +565,12 @@ def main(input_json, extra_data_file):
     #             zip_file.write(file_path, arcname=os.path.basename(file_path))
 
     # Write the log file
-    with open(log_file, "w") as log:
-        json.dump(missing_images, log, indent=4)
+    # with open(log_file, "w") as log:
+    #     json.dump(missing_images, log, indent=4)
 
-    print(f"Fichier TSV sauvegardé : {output_tsv}")
-    print(f"Images sauvegardées dans : {output_images_dir}")
-    print(f"Log des particules sans images : {log_file}")
+    print(f"Images save in: {output_images_dir}")
+    print(f"TSV file save in: {output_tsv}")
+    # print(f"Log des particules sans images : {log_file}")
     print("Fichier zip créé :", archive_filename)
 
 
@@ -539,12 +603,12 @@ if __name__ == "__main__":
     input_json = args.input_json
     if not is_absolute(input_json):
         input_json = os.path.abspath(input_json)
-    print("input_file:", input_json)
+    #print("input_file:", input_json)
 
     extra_file = args.extra
     if not is_absolute(extra_file):
         extra_file = os.path.abspath(extra_file)
-    print("extra_file:",extra_file)
+    #print("extra_file:",extra_file)
 
     # main(args.input_json, args.extra)
     main(input_json, extra_file)
