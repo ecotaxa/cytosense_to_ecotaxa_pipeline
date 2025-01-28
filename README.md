@@ -100,6 +100,11 @@ ln -s /opt/cytosense_to_ecotaxa_pipeline_venv/bin/Cyz2Json cyz2json
 (venv) python pipeline.py the_cyz_files_to_import.tsv
 ```
 
+## run convert.py
+```
+(venv) python convert.py the_cyz_file_to_import.cyz --extra extra_data.json
+```
+
 # run only main.py
 ```
 (venv) python main.py Deployment\ 1\ 2024-07-18\ 21h12.json --extra extra_data.json
@@ -128,9 +133,11 @@ the action will build the binary and push it to the release
 You will find result in : https://github.com/ecotaxa/cytosense_to_ecotaxa_pipeline/actions
 and release in : https://github.com/ecotaxa/cytosense_to_ecotaxa_pipeline/releases
 
+<!--
 # Bug
 
-+ to discover
++ to discover 
+-->
 
 
 # Make your mapping
