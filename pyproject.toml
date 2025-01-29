@@ -16,7 +16,8 @@ dependencies = [
     'six',
     'matplotlib',
     'Pillow',
-    'numpy'
+    'numpy',
+    'requests'
 ]
 
 [project.scripts]
