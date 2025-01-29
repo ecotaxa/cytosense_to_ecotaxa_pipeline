@@ -10,6 +10,9 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+bioODVHeader=False
+
 def remove_extension(value):
     """
     Function to remove the extension name from a file name.
@@ -537,12 +540,18 @@ def main(input_json, extra_data_file):
 
     # Écrire le fichier TSV
     with open(output_tsv, "w", newline="") as tsv_file:
-        for row in bioODV_header:
-            # tsv_file.write("\t".join(row) + "\n")
-            tsv_file.write("//"+ row + "\n")
 
+        # Write the bioODV header
+        if bioODVHeader == True:
+            for row in bioODV_header:
+                # tsv_file.write("\t".join(row) + "\n")
+                tsv_file.write("//"+ row + "\n")
+
+        # Write the TSV header
         tsv_file.write("\t".join(columns) + "\n")
         tsv_file.write("\t".join(types) + "\n")
+
+        # Write the TSV data
         for row in rows:
             # print("Row:", row)
             # tsv_file.write("\t".join(row) + "\n")
@@ -598,6 +607,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze JSON file to generate a folder containing the TSV file and the images.")
     parser.add_argument("input_json", help="The path to the JSON file to analyze.")
     parser.add_argument("--extra", required=True, help="The path to the JSON file containing the extra data. (at the moment name must be extra_data.json and aside the json file)")
+    parser.add_argument("--bioODV", default=False, help="Add the bioODV headers to the TSV file.")
     args = parser.parse_args()
 
     input_json = args.input_json
@@ -609,6 +619,8 @@ if __name__ == "__main__":
     if not is_absolute(extra_file):
         extra_file = os.path.abspath(extra_file)
     #print("extra_file:",extra_file)
+
+    bioODVHeader = args.bioODV
 
     # main(args.input_json, args.extra)
     main(input_json, extra_file)
