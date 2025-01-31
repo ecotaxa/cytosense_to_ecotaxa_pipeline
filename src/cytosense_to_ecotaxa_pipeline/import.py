@@ -52,6 +52,15 @@ def login(user):
     else:
         raise Exception("Login failed")
 
+def printUser(user):
+    if 'password' in user:
+        copiedUser = user.copy()
+        copiedUser['password'] = "******"
+        print("User", json.dumps(copiedUser, indent=4, sort_keys=True))       
+        return
+    
+    print("User", json.dumps(user, indent=4, sort_keys=True))
+
 def getHeader(user,contentType="application/json"):
     
      return {
@@ -313,7 +322,7 @@ def upload_file_(user,zip_file):
                 raise Exception(f"Cannot upload file: {response.json()}")
 
 
-def import_zip_file(user, zip_file):
+def import_zip_file(user, zip_file, skip_loaded_files=False, skip_existing_objects=False, update_mode=False):
     print("import_zip_file:", zip_file)
 
     header = getHeader(user)
@@ -324,9 +333,9 @@ def import_zip_file(user, zip_file):
 
     body = {
         "source_path": zip_file, #"/import_test.zip",
-        "skip_loaded_files": False,
-        "skip_existing_objects": False,
-        "update_mode": "Yes"
+        "skip_loaded_files": True if skip_loaded_files else False,
+        "skip_existing_objects": True if skip_existing_objects else False,
+        "update_mode": 'YES' if update_mode else ""
     }
     
     # body = json.dumps(body)
@@ -354,7 +363,7 @@ def main(user, zip_file):
     try:
         login(user)
 
-        print("user", user)    
+        printUser(user)
 
         # searchProject(user, project)
         if 'projectid' in user:
@@ -368,13 +377,13 @@ def main(user, zip_file):
                         project = createProject(user, user['project'])
                         print("project",project)
                         user['projectid']=project['projid']
-                        print("user", json.dumps(user, indent=4, sort_keys=True))
+                        printUser(user)
                         save_user(user)
                     case 1:
                         project = projectList[0]
                         print("project",project)
                         user['projectid']=project['projid']
-                        print("user", json.dumps(user, indent=4, sort_keys=True))
+                        printUser(user)
                         save_user(user)
                     case _:
                         raise Exception("You have several project with the same name, please add the projectid feature in user.json file")
@@ -384,7 +393,7 @@ def main(user, zip_file):
 
             uploaded = upload_file(user, zip_file)
             print("uploaded", uploaded)
-            import_zip_file(user, uploaded)
+            import_zip_file(user, uploaded, False, False, update_mode=True)
 
         exit(1)
     except Exception as e:
