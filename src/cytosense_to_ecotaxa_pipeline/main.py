@@ -4,6 +4,7 @@ import base64
 import csv
 import argparse
 from datetime import datetime
+import shutil
 import sys
 from zipfile import ZipFile
 from PIL import Image
@@ -370,6 +371,7 @@ def main(input_json, extra_data_file):
         sys.exit(1)
 
     output_images_dir = "images"
+    shutil.rmtree(output_images_dir)
     os.makedirs(output_images_dir, exist_ok=True)
     output_tsv = os.path.join(output_images_dir, "ecotaxa_output.tsv")
     # output_tsv = os.path.abspath(output_tsv)# make absolute path
@@ -510,7 +512,7 @@ def main(input_json, extra_data_file):
         # print("pulseShapes:", pulseShapes)
         image_data = next((img["base64"] for img in data["images"] if img["particleId"] == particle_id), None)
         if image_data:
-            image_file = f"particle_{particle_id}.png"
+            image_file = f"particle_{particle_id}.jpg"
             with open(os.path.join(output_images_dir, image_file), "wb") as img_file:
                 img_file.write(base64.b64decode(image_data))
                 files_in_zip.append(os.path.join(output_images_dir, image_file))
@@ -518,7 +520,7 @@ def main(input_json, extra_data_file):
             missing_images.append(particle_id)
             continue  # go to next particle
 
-        pulse_shape_file =  f"pulse_shape_{particle_id}.png"
+        pulse_shape_file =  f"pulse_shape_{particle_id}.jpg"
         pulse_shape_path = os.path.join(output_images_dir, pulse_shape_file)
         with open(pulse_shape_path, "wb") as img_file:
             image_data = draw_pulse_shape(pulseShapes, "FWS", pulse_shape_path)
@@ -531,9 +533,9 @@ def main(input_json, extra_data_file):
         #TODO: add columns defining polynom coefficents of the pulse shape
         polynomial_fits = []
 
-        row = make_row(particle, data, image_file, 1, column_mapping, extra_data, polynomial_fits)
+        row = make_row(particle, data, image_file, 0, column_mapping, extra_data, polynomial_fits)
         rows.append(row)
-        row = make_row(particle, data, pulse_shape_file, 2, column_mapping, extra_data, polynomial_fits)
+        row = make_row(particle, data, pulse_shape_file, 1, column_mapping, extra_data, polynomial_fits)
         rows.append(row)
 
     print() # to invalid the progress bar
