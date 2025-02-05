@@ -119,6 +119,18 @@ sudo ./uninstall.sh
 on Windows use uninstall.ps1 instead of uninstall.sh
 
 
+# Run with Docker
+
+## build the container
+```
+docker build -t cyto2eco .
+```
+
+## run the container
+```
+docker run -v /Users/sebastiengalvagno/Work/cytosense_to_ecotaxa_pipeline/data:/data -v /Users/sebastiengalvagno/Work/cytosense_to_ecotaxa_pipeline/src/cytosense_to_ecotaxa_pipeline/extra_data:/extra cyto2eco /data/Deployment\ 1\ 2024-07-18\ 21h12.json --extra /extra/Deployment\ 1\ 2024-07-18\ 21h12.json --bioODV=False
+```
+
 # Build
 
 
