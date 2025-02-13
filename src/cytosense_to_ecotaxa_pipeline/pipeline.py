@@ -112,8 +112,8 @@ def call_pipeline_script(file_path, json_file_path):
     print(f"Called convert.py with: {file_path} --extra {json_file_path}")
     try:
         script_dir = os.path.dirname(os.path.abspath(__file__))
-    # full_file_path = os.path.join(script_dir, file_name)
-        subprocess.run([sys.executable, 'convert.py', script_dir, '--extra', json_file_path], check=True)
+        full_convert_path = os.path.join(script_dir, 'convert.py')
+        subprocess.run([sys.executable, full_convert_path, file_path, '--extra', json_file_path], check=True)
         print(f"Called main.py with: {file_path} and {json_file_path}")
     except subprocess.CalledProcessError as e:
         print(f"Error while calling main.py: {e}")

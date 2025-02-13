@@ -96,9 +96,13 @@ def process_file(input_file, extra_data): #, output_data):
         main_script = Path('main.py')
         python_exe = Path(sys.executable)
         
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        full_main_path = os.path.join(script_dir, 'main.py')
+
         subprocess.run([
             str(python_exe),
-            str(main_script),
+
+            str(full_main_path),
             str(json_output),
             '--extra',
             str(extra_data),

@@ -370,8 +370,12 @@ def main(input_json, extra_data_file):
         print("Please check for trailing commas or other JSON syntax errors")
         sys.exit(1)
 
-    output_images_dir = "images"
-    shutil.rmtree(output_images_dir)
+    working_dir = os.getcwd()
+    # output_images_dir = "images"
+    output_images_dir = os.path.join(working_dir, "images")
+    print("output_images_dir:", output_images_dir)
+    if os.path.exists(output_images_dir):
+        shutil.rmtree(output_images_dir)    
     os.makedirs(output_images_dir, exist_ok=True)
     output_tsv = os.path.join(output_images_dir, "ecotaxa_output.tsv")
     # output_tsv = os.path.abspath(output_tsv)# make absolute path
