@@ -58,11 +58,12 @@ def main(tsv_file, output_dir):
                         print("Header mapping:", header_mapping)
                         # here the data
                         print("DATA Row:", row)
+                        working_dir = os.getcwd()
                         file_path = row[0]
                         file_name = os.path.basename(file_path)
                         json_file_name = os.path.splitext(file_name)[0] + ".json"
                         json_file_path = os.path.join(output_dir, json_file_name)
-
+                        full_json_path = os.path.join(working_dir, json_file_path)
                         # build the json file
                         json_data = {}
                         for i, value in enumerate(row[1:], start=1):
@@ -91,15 +92,14 @@ def main(tsv_file, output_dir):
                                 json_data[column_headers[i]]['object'] = header['object']
                                 json_data[column_headers[i]]['units'] = header['units']
 
-
                         # Save the JSON data to a file
-                        with open(json_file_path, 'w', encoding='utf-8') as json_file:
+                        with open(full_json_path, 'w', encoding='utf-8') as json_file:
                             print("Saving {json_file_path}")
                             json.dump(json_data, json_file, indent=4, ensure_ascii=False)
 
                         print(f"JSON file created: {json_file_path}")
 
-                        call_pipeline_script(file_path, json_file_path)
+                        call_pipeline_script(file_path, full_json_path)
 
     except Exception as e:
         print(f"Error: {e}")
@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Analyze a TSV file containing the list of cyz file with the extra data and the BioODV mapping")
     parser.add_argument("tsv_file", help="The path to the JSON file to analyze.")
-    parser.add_argument("delimiter", help="Optional delimiter for the TSV file.")
+    parser.add_argument("-d", "--delimiter", default="\t", help="Optional delimiter for the TSV file (default: tab)")
     args = parser.parse_args()
 
     tsv_file = args.tsv_file

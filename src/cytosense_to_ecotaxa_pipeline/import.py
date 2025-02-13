@@ -423,7 +423,7 @@ if __name__ == "__main__":
     parser.add_argument("--project", help="The project ID to import the data")
     parser.add_argument("--ecotaxa", default="https://ecotaxa.obs-vlfr.fr", help="The Ecotaxa url")
     parser.add_argument("--overwriteUser", default=False, help="Overwrite the user config file (remove password)")
-    parser.add_argument("--overwriteCfg", default=False, help="Overwrite the config file (don'terase password if present)")
+    parser.add_argument("--overwriteCfg", default=False, help="Overwrite the config file (don't erase password if present)")
 
     args = parser.parse_args()
 

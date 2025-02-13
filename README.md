@@ -17,17 +17,23 @@ sudo apt  install jq
 ## Installation
 
 ### Installation from Github
+Recommended way to install the pipeline is to use the install.sh script.
 
-just need install.sh file from the repository
+You just need to download the install.sh file from the repository. Run it with the following commands:
 
 ```bash
+curl -L -O "https://raw.githubusercontent.com/ecotaxa/cytosense_to_ecotaxa_pipeline/main/install.sh"
+chmod +x install.sh
 sudo ./install.sh --github
 ```
 
 ### Installation from local files
-
-#### Manual mode
+The manual mode
+```diff
+- Warning: not fully tested
 ```
+
+```bash
 python3 -m venv test_venv    
 source test_venv/bin/activate
 pip install --upgrade pip
