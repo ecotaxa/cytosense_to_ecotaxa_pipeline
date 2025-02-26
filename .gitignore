@@ -1,3 +1,12 @@
+
+data/
+user.json*
+summarize.py
+ecotaxa-openapi.json
+*.cyz
+Cyz2Json
+src/**/*.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -172,3 +181,4 @@ cython_debug/
 .github/.DS_Store
 images/
 .DS_Store
+src/cytosense_to_ecotaxa_pipeline/extra_data/Deployment 1 2024-07-18 21h12.json
