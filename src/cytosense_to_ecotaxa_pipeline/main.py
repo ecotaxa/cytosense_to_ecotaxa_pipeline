@@ -1,26 +1,30 @@
-import json
-import os
-import base64
-import csv
-import argparse
-from datetime import datetime
-import shutil
-import sys
-from zipfile import ZipFile
-from PIL import Image
+
+import json, os, sys, shutil, argparse, base64
 import numpy as np
 import matplotlib.pyplot as plt
+from zipfile import ZipFile
+from PIL import Image
+from .transform_function import *
+from .mapping import column_mapping
 
+###########################################################
+# Cytosense to EcoTaxa conversion tool - FULLY DOCUMENTED #
+# FINAL PRODUCTION VERSION (STABLE + WITH PULSE IMAGE)    #
+###########################################################
+
+# --------------------------------------------------------
+# Draw pulse shape images for each particle
+# --------------------------------------------------------
 
 bioODVHeader=False
 
-def remove_extension(value):
-    """
-    Function to remove the extension name from a file name.
-    """
-    if value and isinstance(value, str):
-        return os.path.splitext(value)[0]
-    return value
+# def remove_extension(value):
+#     """
+#     Function to remove the extension name from a file name.
+#     """
+#     if value and isinstance(value, str):
+#         return os.path.splitext(value)[0]
+#     return value
 
 # Transformation pour les dates
 # def transform_date(value):
@@ -39,27 +43,27 @@ def remove_extension(value):
 #             return value  # Retourne la valeur brute si elle n'est pas au bon format
 #     return value
 
-def extract_date_utc(iso_datetime):
-    """
-    Extrait la date au format YYYYMMDD UTC à partir d'une chaîne ISO 8601.
-    Convert an ISO 8601 datetime string to YYYYMMDD UTC format.
-    """
-    try:
-        dt = datetime.fromisoformat(iso_datetime.rstrip("Z")).astimezone()  # Conversion vers UTC
-        return dt.strftime("%Y%m%d UTC")
-    except ValueError:
-        return "INVALID_DATE"
+# def extract_date_utc(iso_datetime):
+#     """
+#     Extrait la date au format YYYYMMDD UTC à partir d'une chaîne ISO 8601.
+#     Convert an ISO 8601 datetime string to YYYYMMDD UTC format.
+#     """
+#     try:
+#         dt = datetime.fromisoformat(iso_datetime.rstrip("Z")).astimezone()  # Conversion vers UTC
+#         return dt.strftime("%Y%m%d UTC")
+#     except ValueError:
+#         return "INVALID_DATE"
 
-def extract_time_utc(iso_datetime):
-    """
-    Extrait l'heure au format HHMMSS UTC à partir d'une chaîne ISO 8601.
-    Convert an ISO 8601 datetime string to HHMMSS UTC format.
-    """
-    try:
-        dt = datetime.fromisoformat(iso_datetime.rstrip("Z")).astimezone()  # Conversion vers UTC
-        return dt.strftime("%H%M%S UTC")
-    except ValueError:
-        return "INVALID_TIME"
+# def extract_time_utc(iso_datetime):
+#     """
+#     Extrait l'heure au format HHMMSS UTC à partir d'une chaîne ISO 8601.
+#     Convert an ISO 8601 datetime string to HHMMSS UTC format.
+#     """
+#     try:
+#         dt = datetime.fromisoformat(iso_datetime.rstrip("Z")).astimezone()  # Conversion vers UTC
+#         return dt.strftime("%H%M%S UTC")
+#     except ValueError:
+#         return "INVALID_TIME"
 
 
 # def search_Pulse_Shapes(value, description):
@@ -135,12 +139,11 @@ def draw_pulse_shape_old(pulse_data,description,image_path):
     image.save(image_path)
 
 
-
 def normalize_data(values):
     """Normalizes data to the range [0, 1] using min-max scaling."""
     return (values - np.min(values)) / (np.max(values) - np.min(values))
 
-def draw_pulse_shape(pulse_data, description, image_path, normalize= True):
+def draw_pulse_shape(pulse_data, description, image_path, normalize=True):
     """
     Draws a pulse shape image from pulse data and saves it.
 
@@ -150,27 +153,26 @@ def draw_pulse_shape(pulse_data, description, image_path, normalize= True):
         image_path (str): Path to save the image.
     """
     values = next((pulse["values"] for pulse in pulse_data if pulse["description"] == description), None)
-
     if values is None:
         print(f"Warning: No pulse shape found with description '{description}'. Skipping image creation.")
-        return 
-    
+        return
+
     if normalize:
         values = normalize_data(values) # Normalize if requested
 
     x = range(len(values))
-
     fig, ax = plt.subplots(figsize=(10, 6))  # Adjust figure size as needed
     ax.plot(x, values, marker="o", linestyle="-", ms=0.1)  # Keep marker size small
     ax.set_title(f"{description}")
     ax.set_xlabel("Time")  # Add axis labels
     ax.set_ylabel("Value")
+    plt.tight_layout()
+    plt.savefig(image_path) # Save the figure to the specified path
+    plt.close(fig) # Close the figure to free up resources
 
-    plt.tight_layout()
-    # plt.show()
-    plt.tight_layout()
-    plt.savefig(image_path)  # Save the figure to the specified path
-    plt.close(fig)  # Close the figure to free up resources
+# --------------------------------------------------------
+# BioODV + EcoTaxa full generation pipeline
+# --------------------------------------------------------
 
 
 
@@ -225,14 +227,14 @@ def draw_pulse_shape(pulse_data, description, image_path, normalize= True):
 
 def format_value(value):
     """
-    Formate une valeur avec un seul jeu de guillemets pour les chaînes de texte
+    Format values to clean TSV-friendly text 
     Clean the value, only one pair of quotes for text strings
     """
-    # print("format_value:",value)
     if isinstance(value, str):
         cleaned_value = value.strip('"')  # Remove the double quote around the data
         return f'"{cleaned_value}"'
-    return str(value)  # Retourne les autres types sous forme de chaîne
+    return str(value)
+
 
 def summarize_pulse_numpy(pulse_data_list, n_poly=10):
     """
@@ -255,28 +257,29 @@ def summarize_pulse_numpy(pulse_data_list, n_poly=10):
     return coefficients.tolist()
 
 
-def transform_column_name(name):
-    """
-    Function pour transform dynamicately the column name
-"""
-    return name.replace(".", "_").replace(" ", "_")
+# def transform_column_name(name):
+#     """
+#     Function pour transform dynamicately the column name
+# """
+#     return name.replace(".", "_").replace(" ", "_")
 
 def gen_bioODV_header_from_extra(mapping, headers):
+    """ Generate BioODV headers from extra_data.json content """
     print("BioODV header generating from extra data")
     for key, value in mapping.items():
-        # print(f"bioODV {key} {value}")
-        if 'object' in value and 'units' in value:
+        obj = value.get('object') if isinstance(value, dict) else None
+        units = value.get('units') if isinstance(value, dict) else None
+        if obj and units:
             row=f"<subject>{key}</subject>"
             row+=f"<object>{value['object']}</object>"
             row+=f"<units>{value['units']}</units>"
             headers.append(row)
     return headers
-    pass
 
-def gen_bioODV_header_from_mapping(mapping,headers):
+def gen_bioODV_header_from_mapping(mapping, headers):
+    """ Generate BioODV headers from mapping file """
     print("BioODV header generating from mapping")
     for key, value in mapping.items():
-        # print(f"bioODV {key} {value}")
         if 'bioodv' in value:
             row=f"<subject>{value['name']}</subject>"
             row+=f"<object>{value['bioodv']['object']}</object>"
@@ -284,11 +287,12 @@ def gen_bioODV_header_from_mapping(mapping,headers):
             headers.append(row)
     return headers
 
-
 def make_row(particle, data, image_file, img_rank, column_mapping, extra_data, polynomial_fits=[]):
-    row = [image_file, img_rank]  # img_file_name
+    """ Build one TSV row per particle """
+    row = [image_file, img_rank]
     for value in extra_data.values():
-        row.append(format_value(value['value']))
+        val = value['value'] if isinstance(value, dict) and 'value' in value else value
+        row.append(format_value(val))
 
     for key, mapping in column_mapping.items():
         # print("Key:", key)
@@ -296,59 +300,34 @@ def make_row(particle, data, image_file, img_rank, column_mapping, extra_data, p
 
         if "name" not in mapping or mapping["name"] is None:
             continue  # Ignore column with undefined name
-
         try:
             if "." in key:
-                # print(f"Key: {key}, Value: {data.get(key, None)}")
                 key_parts = key.split(".")
-                # print(f"Key parts: {key_parts}")
-            #     value = data.get(key_parts[0], {}).get(key_parts[1], None)
-            #     print(f"Key parts: {key_parts}, Value: {value}")
-            # else:
-            #     value = data.get(key, None)
-        
-                # current_obj = particle  # Start from the particle object
-                current_obj = data  # Start from the particle object
+                current_obj = data
                 for part in key_parts:
-                    # print(f"Current part: {part}")
                     star = part.split("*")
                     bracket = part.split("[")
-                    if len(star)>1: part = star[0]
-                    if len(bracket)>1: 
+                    if len(star) > 1: part = star[0]
+                    if len(bracket) > 1: 
                         part = bracket[0]
-                        # print(f"Bracket: part: {part}")
                         if part == "particles":
                             current_obj = particle
-                            # print("Particles -> " , current_obj)
-                        # current_obj = part
                     else:
                         current_obj = current_obj.get(part, {})
-                        # if part == "pulseShapes":
-                            # print("PulseShapes -> " , current_obj)
-                    # print(f"Current object: {current_obj}")
-
-
-
                 value = current_obj if current_obj != {} else None
             else:
                 value = particle.get(key, None)
 
-
-            if mapping["transform"]:
-                value = mapping["transform"](value)
-                # print(f"Transformed value: {value}")
-
+            transform = mapping.get("transform")
+            if transform:
+                value = transform(value)
             row.append(format_value(value))
-        except Exception as e:
+        except Exception:
             row.append("ERROR")
-
     return row
-
-
 
 def main(input_json, extra_data_file):
     # Loading the JSON files
-
     print("open:", input_json)
     print("extra:", extra_data_file)
 
@@ -370,18 +349,19 @@ def main(input_json, extra_data_file):
         print("Please check for trailing commas or other JSON syntax errors")
         sys.exit(1)
 
-    working_dir = os.getcwd()
-    # output_images_dir = "images"
-    output_images_dir = os.path.join(working_dir, "images")
+    # working_dir = os.getcwd()
+    # output_images_dir = os.path.join(working_dir, "images")
+    json_dir = os.path.dirname(os.path.abspath(input_json)) # save file aside the json file
+    output_images_dir = os.path.join(json_dir, "images")
     print("output_images_dir:", output_images_dir)
     if os.path.exists(output_images_dir):
-        shutil.rmtree(output_images_dir)    
+        shutil.rmtree(output_images_dir)
     os.makedirs(output_images_dir, exist_ok=True)
+
     output_tsv = os.path.join(output_images_dir, "ecotaxa_output.tsv")
-    # output_tsv = os.path.abspath(output_tsv)# make absolute path
     log_file = os.path.join(output_images_dir, "log.json")
     log_file = os.path.abspath(log_file) # make absolute path
-
+    
     """
     Mapping dictionnary
     key is the json key
@@ -401,57 +381,7 @@ def main(input_json, extra_data_file):
     #     "instrument.serialNumber": {"name": "serialnumber", "type": "[t]", "transform": None},
     # }
 
-    column_mapping = {
-    "filename": {"name": "sample_id", "type": "[t]", "transform": remove_extension},
-    "particleId": {"name": "object_id", "type": "[f]", "transform": None},
-    # "hasImage": {"name": "has_image", "type": "[t]", "transform": lambda v: "true" if v else "false"},
-    "hasImage": {},
 
-    # "instrument.name": {"name": "instrument", "type": "[t]", "transform": None},
-    # "instrument.serialNumber": {"name": "serialnumber", "type": "[t]", "transform": None},
-
-    "instrument.name": {"name": "acq_name", "type": "[t]", "transform": None},
-    "instrument.serialNumber": {"name": "acq_id", "type": "[t]", "transform": None},
-
-
-    "instrument.measurementSettings.name": {"name": "acq_measurementSettings_name", "type": "[t]", "transform": None},
-    "instrument.measurementSettings.duration": {"name": "acq_measurementSettings_duration", "type": "[f]", "transform": None, "bioodv": {
-        "object":"SDN:P01::AZDRZZ01",
-        "units":"SDN:P06:UMIN"
-    }},
-    "instrument.measurementSettings.CytoSettings.SamplePompSpeed": {"name": "acq_measurementSettings_pumpSpeed", "type": "[f]", "transform": None},
-    "instrument.measurementSettings.triggerChannel": {"name": "acq_measurementSettings_triggerChannel", "type": "[t]", "transform": None},
-    "instrument.measurementSettings.triggerLevel": {"name": "acq_measurementSettings_triggerLevel", "type": "[f]", "transform": None},
-    "instrument.measurementSettings.smartTrigger": {"name": "acq_measurementSettings_smartTrigger", "type": "[t]", "transform": lambda v: "true" if v else "false"},
-    # "instrument.measurementSettings.takeImages": {"name": "measurementSettings_takeImages", "type": "[t]", "transform": None},
-    # "instrument.measurementSettings.takeImages": {"name": None},
-
-    "instrument.measurementResults.start": {"name": "sample_measurementResults_Start", "type": "[t]", "transform": extract_date_utc},
-    "instrument.measurementResults.start*1": {"name": "sample_measurementResults_StartH", "type": "[t]", "transform": extract_time_utc},
-    "instrument.measurementResults.duration": {"name": "sample_measurementResults_duration", "type": "[f]", "transform": None},
-    "instrument.measurementResults.particleCount": {"name": "sample_measurementResults_particleCount", "type": "[f]", "transform": None},
-    "instrument.measurementResults.particlesInFileCount": {"name": "sample_measurementResults_particlesInFileCount", "type": "[f]", "transform": None},
-    "instrument.measurementResults.pictureCount": {"name": "sample_measurementResults_pictureCount", "type": "[f]", "transform": None},
-    "instrument.measurementResults.pumpedVolume": {"name": "sample_measurementResults_pumpedVolume", "type": "[f]", "transform": None},
-    "instrument.measurementResults.analysedVolume": {"name": "sample_measurementResults_analysedVolume", "type": "[f]", "transform": None},
-    "instrument.measurementResults.particleConcentration": {"name": "sample_measurementResults_particleConcentration", "type": "[f]", "transform": None},
-    "instrument.measurementResults.systemTemperature": {"name": "sample_measurementResults_systemTemperature", "type": "[f]", "transform": None},
-    "instrument.measurementResults.sheathTemperature": {"name": "sample_measurementResults_sheathTemperature", "type": "[f]", "transform": None},
-    "instrument.measurementResults.absolutePressure": {"name": "sample_measurementResults_absolutePressure", "type": "[f]", "transform": None},
-    "instrument.measurementResults.differentialPressure": {"name": "sample_measurementResults_differential_pressure","type": "[f]","transform": None},
-
-    # commented because same data are too long to be stored in the colunms (more than 250 characters (limited in Ecotaxa by varstring))
-    # "particles[].pulseShapes*FWS": {"name": "object_pulseShape_FWS","type": "[t]","transform":search_pulse_shapes("FWS")},
-    # "particles[].pulseShapes*FWS": {"name": "object_pulseShape_FWS","type": "[t]","transform":add_pulse_shapes("FWS")},
-    # "particles[].pulseShapes*Sidewards_Scatter": {"name": "object_pulseShape_Sidewards_Scatter","type": "[t]","transform":search_pulse_shapes("Sidewards Scatter")},
-    # "particles[].pulseShapes*Fl_Yellow": {"name": "object_pulseShape_Fl_Yellow","type": "[t]","transform":search_pulse_shapes("Fl Yellow")},
-    # "particles[].pulseShapes*Fl_Orange": {"name": "object_pulseShape_Fl_Orange","type": "[t]","transform":search_pulse_shapes("Fl Orange")},
-    # "particles[].pulseShapes*Fl_Red": {"name": "object_pulseShape_Fl_Red","type": "[t]","transform":search_pulse_shapes("Fl Red")},
-    # "particles[].pulseShapes*Curvature": {"name": "object_pulseShape_Curvature","type": "[t]","transform":search_pulse_shapes("Curvature")},
-    # "particles[].pulseShapes*Forward_Scatter_Left": {"name": "object_pulseShape_Forward_Scatter_Left","type": "[t]","transform":search_pulse_shapes("Forward Scatter Left")},
-    # "particles[].pulseShapes*Forward_Scatter_Right": {"name": "object_pulseShape_Forward_Scatter_Right","type": "[t]","transform":search_pulse_shapes("Forward Scatter Right")},
-}
-    
 
 
     # # Add les dynamics column FOR measurementSettings AND measurementResults features
@@ -479,21 +409,15 @@ def main(input_json, extra_data_file):
     #     }
 
     # Build the columns and types list
-
-    files_in_zip = []
-
-    bioODV_header = [
-        "SDN_PARAMETER_MAPPING"
-    ]
+    bioODV_header = ["SDN_PARAMETER_MAPPING"]
     bioODV_header = gen_bioODV_header_from_mapping(column_mapping, bioODV_header)
     bioODV_header = gen_bioODV_header_from_extra(extra_data, bioODV_header)
     # print(bioODV_header)
-    columns = ["img_file_name","img_rank"] + list(extra_data.keys())  # Add extra data at the begin of the tsv line
-    types = ["[t]","[f]"] + ["[t]" if isinstance(value['value'], str) else "[f]" for value in extra_data.values()]
-    seen_columns = set(columns)  # Éviter les doublons avec extra_data
+    columns = ["img_file_name", "img_rank"] + list(extra_data.keys())  # Add extra data at the begin of the tsv line
+    types = ["[t]", "[f]"] + ["[t]" if isinstance(val.get('value') if isinstance(val, dict) else val, str) else "[f]" for val in extra_data.values()]
+    seen_columns = set(columns)# Avoid duplicates with extra_data
 
     for key, mapping in column_mapping.items():
-        # if mapping["name"] == None:
         if "name" not in mapping or mapping["name"] is None:
             continue  # Ignore column where name is undefined
         if mapping["name"] not in seen_columns:
@@ -506,6 +430,8 @@ def main(input_json, extra_data_file):
 
     # Building tsv lines
     rows = []
+    files_in_zip = []
+
     for particle in data["particles"]:
         if not particle["hasImage"]:
             continue  # Ignore particles without image
@@ -531,8 +457,8 @@ def main(input_json, extra_data_file):
             # img_file.write(image_data)
             files_in_zip.append(pulse_shape_path)
 
-            #TODO: add columns defining polynom coefficents of the pulse shape
-            # row.append(polynomial_fits)
+        #TODO: add columns defining polynom coefficents of the pulse shape
+        # row.append(polynomial_fits)
 
         #TODO: add columns defining polynom coefficents of the pulse shape
         polynomial_fits = []
@@ -544,14 +470,15 @@ def main(input_json, extra_data_file):
 
     print() # to invalid the progress bar
 
-    # Écrire le fichier TSV
+    # Write TSV file
     with open(output_tsv, "w", newline="") as tsv_file:
 
         # Write the bioODV header
+
         if bioODVHeader == True:
             for row in bioODV_header:
                 # tsv_file.write("\t".join(row) + "\n")
-                tsv_file.write("//"+ row + "\n")
+                tsv_file.write("//" + row + "\n")
 
         # Write the TSV header
         tsv_file.write("\t".join(columns) + "\n")
@@ -564,8 +491,9 @@ def main(input_json, extra_data_file):
             tsv_file.write("\t".join(str(item) for item in row) + "\n")
 
     files_in_zip.append(output_tsv)
-
+    
     archive_filename = os.path.splitext(input_json)[0] + '.zip'
+
     with ZipFile(archive_filename, 'w') as zip_file:
         for file in files_in_zip:
             zip_file.write(file)
@@ -583,10 +511,10 @@ def main(input_json, extra_data_file):
     # with open(log_file, "w") as log:
     #     json.dump(missing_images, log, indent=4)
 
-    print(f"Images save in: {output_images_dir}")
-    print(f"TSV file save in: {output_tsv}")
+    print(f"Images saved in: {output_images_dir}")
+    print(f"TSV file saved in: {output_tsv}")
     # print(f"Log des particules sans images : {log_file}")
-    print("Fichier zip créé :", archive_filename)
+    print("Zip archive created:", archive_filename)
 
 
 
@@ -605,17 +533,15 @@ def is_absolute(path):
     else:
         return is_absolute_unix(path)
 
-# CLI
+
+# Entry point for CLI mode
 if __name__ == "__main__":
-
     print("-- main.py --")
-
     parser = argparse.ArgumentParser(description="Analyze JSON file to generate a folder containing the TSV file and the images.")
     parser.add_argument("input_json", help="The path to the JSON file to analyze.")
     parser.add_argument("--extra", required=True, help="The path to the JSON file containing the extra data. (at the moment name must be extra_data.json and aside the json file)")
     parser.add_argument("--bioODV", default=False, help="Add the bioODV headers to the TSV file.")
     args = parser.parse_args()
-
     input_json = args.input_json
     if not is_absolute(input_json):
         input_json = os.path.abspath(input_json)
@@ -628,5 +554,4 @@ if __name__ == "__main__":
 
     bioODVHeader = args.bioODV
 
-    # main(args.input_json, args.extra)
-    main(input_json, extra_file)
+    main(args.input_json, args.extra)

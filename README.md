@@ -210,8 +210,8 @@ for example instrument.name is the path to read feature
 
 ## Read data in particle array
 
-to read feature, that are define in the particle array, you need to use square bracket notation
-"particles[].pulseShapes", in this case dot path are limite to the first feature and need to use a function to find the data on it
+to read feature, that are defined in the particle array, you need to use square bracket notation
+"particles[].pulseShapes", in this case dot path are limited to the first feature and you need to use a function to find the data on it
 
 To get particles[].pulseShapes.FWS, in fact you need to use a function to find the data on it
 
@@ -225,7 +225,7 @@ To get particles[].pulseShapes.FWS, in fact you need to use a function to find t
 }
 ```
 
-search_pulse_shapes("FWS") is a function that search for the feature FWS in the pulseShapes array and return the value you could add some processing in the sub function for example to convert the values in this case into a polynomial function or to convert the values to a string (take care to the data size string are limited to 250 characters)
+search_pulse_shapes("FWS") is a function that search for the feature FWS in the pulseShapes array and return the value. You could add some processing in the sub function, for example, to convert the values in this case into a polynomial function or to convert the values to a string (take care to the data size: string length are limited to 250 characters in Ecotaxa)
 
 The sub function permit to pass extra parameters to the function
 ```python
@@ -244,7 +244,7 @@ def search_pulse_shapes(description):
 
 
 ### Several use of the same cytosense feature
-If you need to use the same cytosense feature several time in the mapping you can use the same name but with a different suffix: the suffix must be and id prefixed by a star.
+If you need to use the same cytosense feature several time in the mapping you can use the same name but with a different suffix: the suffix must be an id prefixed by a star.
 
 Ecotaxa have a column for date and a column for time, but in the Cytosense data there is only one feature containing both date and time. Then you need to split the feature in two store in two columns.
 
@@ -262,7 +262,7 @@ or
 
 # The json extra data for ecotaxa tsv file used by main.py
 
-The json file is a list of object, each object describe the data to add to the ecotaxa tsv file.
+The json file is a list of object, each object describes the data to add to the ecotaxa tsv file.
 and could also contain the bioODV mapping.
 
 a simple extra_data.json file could be:
