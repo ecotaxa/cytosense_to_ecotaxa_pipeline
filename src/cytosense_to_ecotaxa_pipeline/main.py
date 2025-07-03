@@ -4,12 +4,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 from zipfile import ZipFile
 from PIL import Image
-from .transform_function import *
-from .mapping import column_mapping
+# from .transform_function import *
+# from .mapping import column_mapping
+# from cytosense_to_ecotaxa_pipeline.transform_function import *
+# from cytosense_to_ecotaxa_pipeline.mapping import column_mapping
+
+try:
+    # Essayer d'abord l'importation relative (fonctionne lors du développement)
+    from .transform_function import *
+except ImportError:
+    # Si ça échoue, essayer l'importation absolue (fonctionne après installation)
+    from cytosense_to_ecotaxa_pipeline.transform_function import *
+
+try:
+    # Essayer d'abord l'importation relative (fonctionne lors du développement)
+    from .mapping import column_mapping
+except ImportError:
+    # Si ça échoue, essayer l'importation absolue (fonctionne après installation)
+    from cytosense_to_ecotaxa_pipeline.mapping import column_mapping
+
+
 
 ###########################################################
-# Cytosense to EcoTaxa conversion tool - FULLY DOCUMENTED #
-# FINAL PRODUCTION VERSION (STABLE + WITH PULSE IMAGE)    #
+# Cytosense to EcoTaxa conversion tool                    #
 ###########################################################
 
 # --------------------------------------------------------
@@ -533,14 +550,12 @@ def is_absolute(path):
     else:
         return is_absolute_unix(path)
 
-
-# Entry point for CLI mode
-if __name__ == "__main__":
+def cli_main():
     print("-- main.py --")
     parser = argparse.ArgumentParser(description="Analyze JSON file to generate a folder containing the TSV file and the images.")
     parser.add_argument("input_json", help="The path to the JSON file to analyze.")
     parser.add_argument("--extra", required=True, help="The path to the JSON file containing the extra data. (at the moment name must be extra_data.json and aside the json file)")
-    parser.add_argument("--bioODV", default=False, help="Add the bioODV headers to the TSV file.")
+    parser.add_argument("--bioODV", action="store_true", default=False, help="Add the bioODV headers to the TSV file.")
     args = parser.parse_args()
     input_json = args.input_json
     if not is_absolute(input_json):
@@ -555,3 +570,9 @@ if __name__ == "__main__":
     bioODVHeader = args.bioODV
 
     main(args.input_json, args.extra)
+
+# Entry point for CLI mode
+if __name__ == "__main__":
+    cli_main()
+
+

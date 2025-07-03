@@ -4,22 +4,53 @@ import sys
 from pathlib import Path
 import json
 
+# def get_cyz2json_path():
+#     """Get the platform-specific path to cyz2json binary"""
+#     package_dir = Path(__file__).parent
+#     # bin_dir = package_dir / "bin"
+#     bin_dir = package_dir
+    
+#     binary_name = "cyz2Json.exe" if sys.platform == "win32" else "Cyz2Json"
+#     binary_path = bin_dir / binary_name
+    
+#     if not binary_path.exists():
+#         raise FileNotFoundError(f"Could not find cyz2json binary at {binary_path}")
+    
+#     # if sys.platform != "win32":
+#         # binary_path.chmod(0o755)
+    
+#     return str(binary_path)
+
 def get_cyz2json_path():
-    """Get the platform-specific path to cyz2json binary"""
+    """
+    Get the platform-specific path to cyz2json binary,
+    checking multiple possible locations.
+    """
     package_dir = Path(__file__).parent
-    # bin_dir = package_dir / "bin"
-    bin_dir = package_dir
-    
     binary_name = "cyz2Json.exe" if sys.platform == "win32" else "Cyz2Json"
-    binary_path = bin_dir / binary_name
     
-    if not binary_path.exists():
-        raise FileNotFoundError(f"Could not find cyz2json binary at {binary_path}")
+    # List of possible locations to check
+    possible_locations = [
+        package_dir / binary_name,           # Direct in package
+        package_dir / "bin" / binary_name,   # In bin subdirectory
+        package_dir / "lib" / binary_name    # In lib subdirectory
+    ]
     
-    # if sys.platform != "win32":
-        # binary_path.chmod(0o755)
+    # Check if the binary exists in any of the possible locations
+    for location in possible_locations:
+        if location.exists():
+            # Make sure the binary is executable on Unix systems
+            if sys.platform != "win32" and not os.access(str(location), os.X_OK):
+                try:
+                    location.chmod(0o755)
+                except Exception as e:
+                    print(f"Warning: Could not make {location} executable: {e}")
+            
+            return str(location)
     
-    return str(binary_path)
+    # If we get here, we couldn't find the binary
+    raise FileNotFoundError(f"Could not find cyz2json binary in any of: {[str(loc) for loc in possible_locations]}")
+
 
 # def create_default_extra_data(input_path):
 #     """

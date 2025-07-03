@@ -34,9 +34,10 @@ The manual mode
 ```
 
 ```bash
-python3 -m venv test_venv    
-source test_venv/bin/activate
+python3 -m venv venv    
+source venv/bin/activate
 pip install --upgrade pip
+pip intall -e .
 pip install six matplotlib Pillow numpy
 
 # necessary to install the cyz2json binary but need to copy the main.py and/or pipeline.py files in the venv

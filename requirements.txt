@@ -1,1 +1,4 @@
-pip3 install setuptools
+numpy>=1.19.0
+matplotlib>=3.3.0
+pillow>=8.0.0
+six>=1.15.0

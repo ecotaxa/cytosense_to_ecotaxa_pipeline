@@ -1,4 +1,11 @@
-from .transform_function import *
+# from .transform_function import *
+# from cytosense_to_ecotaxa_pipeline.transform_function import *
+try:
+    # Essayer d'abord l'importation relative (fonctionne lors du développement)
+    from .transform_function import *
+except ImportError:
+    # Si ça échoue, essayer l'importation absolue (fonctionne après installation)
+    from cytosense_to_ecotaxa_pipeline.transform_function import *
 
 column_mapping = {
     "filename": { "name": "filename", "type": "[t]", "transform": remove_extension },

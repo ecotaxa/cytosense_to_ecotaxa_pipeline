@@ -176,7 +176,7 @@ echo "Creating launcher script..."
 sudo tee /usr/local/bin/cytosense_to_ecotaxa_pipeline << 'EOF'
 #!/bin/bash
 source /opt/cytosense_to_ecotaxa_pipeline_venv/bin/activate
-python /opt/cytosense_to_ecotaxa_pipeline_venv/bin/pipeline.py "$@"
+python -m cytosense_to_ecotaxa_pipeline.pipeline "$@"
 deactivate
 EOF
 
