@@ -25,9 +25,7 @@ setup(
     },
     install_requires=[
         'six',
-        'matplotlib',
-        'numpy',
-        'pillow',
+        'matplotlib'
     ],
     python_requires='>=3.6',
     author="Sébastien Galvagno",
