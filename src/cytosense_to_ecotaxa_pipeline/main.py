@@ -18,10 +18,10 @@ except ImportError:
 
 try:
     # Essayer d'abord l'importation relative (fonctionne lors du développement)
-    from .mapping import column_mapping
+    from .mapping import column_mapping, particles_parameters
 except ImportError:
     # Si ça échoue, essayer l'importation absolue (fonctionne après installation)
-    from cytosense_to_ecotaxa_pipeline.mapping import column_mapping
+    from cytosense_to_ecotaxa_pipeline.mapping import column_mapping, particles_parameters
 
 
 
@@ -254,7 +254,7 @@ def format_value(value):
     return str(value)
 
 
-def summarize_pulse_numpy(pulse_data_list, n_poly=10):
+def summarize_pulse_numpy(pulse_data_list, n_poly=10) -> list[float]:
     """
     Summarizes a pulse shape using polynomial fitting with NumPy.
 
@@ -347,8 +347,94 @@ def make_row(particle, data, image_file, img_rank, column_mapping, extra_data, p
             else:
                 row.append(format_value(value))
         except Exception:
-            row.append("ERROR")
+            # row.append("ERROR")
+            row.append( "NaN" if mapping["type"] == "[f]" else "" )
+
+    row.extend(polynomial_fits)  # Add polynomial fits to the row
     return row
+
+def getChannels(channels):
+    """
+    Extracts channel information from the instrument data.
+    Returns a list of channel descriptions.
+    """
+    channel_descriptions = []
+    for channel in channels:
+        description = channel.get("description", "")
+        if description:
+            channel_descriptions.append(description)
+    return channel_descriptions
+
+def define_particules_columns(channel:str):
+    """ define colomns for particles from channel description """
+    columns = []
+    if channel:
+        channel_no_space = channel.replace(" ", "_")
+        for particle_feature in particles_parameters:
+            column_name = channel_no_space + "_" + particle_feature
+            columns.append(column_name)
+    return columns
+
+def get_particles_columns(channels) -> list: 
+    """
+    Extracts particle columns from the instrument channels.
+    Returns a list of particle columns.
+    """
+    particle_columns = []
+    for channel in channels:
+        columns = define_particules_columns(channel)
+        particle_columns.extend(columns)
+
+
+    # Add the pulseShapes columns after all the particle columns
+    for channel in channels:
+        columns = []
+        print(f"Processing channel: {channel}")
+        column_name = f"{channel.replace(' ', '_')}"
+        for index in range(1,11):
+            columns.append(f"{column_name}_{index}")
+        particle_columns.extend(columns)
+
+    return particle_columns
+
+
+
+def build_particles_parameters(channels:list[str], parameters):
+    """
+    Build the particle parameters from the channels and parameters.
+    Returns a list of particle parameters.
+    """
+    particle_parameters = []
+    for channel in channels:
+        # search channel array that have description == channel
+        parameterList = next((item for item in parameters if item['description'] == channel), None)
+        if parameterList:
+            for feature in particles_parameters:
+                # print(f"Adding {feature} for channel {channel}")
+                particle_parameters.append(parameterList.get(feature,"NaN"))            
+
+    return particle_parameters
+
+def build_polynomial_fits(channels:list[str], pulses):
+    """
+    Build polynomial fits for each particle in the particles list.
+    Returns a list of polynomial fits.
+    """
+    from typing import Any
+    polynomial_fits = []
+    for channel in channels:
+        pulse = next((item for item in pulses if item['description'] == channel), None)
+        if pulse:
+            # print(f"Processing channel: {channel}")
+            values = pulse.get("values", [])
+            if values:
+                fit = summarize_pulse_numpy(values)
+                polynomial_fits.extend(fit)
+            else:
+                print(f"Warning: No values found for channel '{channel}'. Skipping polynomial fit.")
+        else:
+            print(f"Warning: No pulse shape found with description '{channel}'. Skipping polynomial fit.")
+    return polynomial_fits
 
 def main(input_json, extra_data_file):
     # Loading the JSON files
@@ -443,6 +529,10 @@ def main(input_json, extra_data_file):
 
     print(f"Nombre total de clés dans column_mapping: {len(column_mapping)}")
     
+    # build the particle parameters columns follow by the p rticle pulseShape columns
+    channels = getChannels(data["instrument"]["channels"])
+    particles_colums = get_particles_columns(channels)
+
     ignored_columns = []
     valid_columns = []
 
@@ -453,17 +543,21 @@ def main(input_json, extra_data_file):
         else:
             valid_columns.append(key)
         if mapping["name"] not in seen_columns:
-            if mapping["name"].startswith("particles[].pulseShapes"):
-                print(f"Processing pulse column: {mapping['name']}")
-                for i in range(1, 11):
-                    print("Adding column for pulse shape:", f"{mapping['name']}_{i}")
-                    columns.append(f"{mapping['name']}_{i}")
-                types.extend([mapping["type"]] * 10)
-                seen_columns.add(mapping["name"])
-            else:
+            # if mapping["name"].startswith("particles[].pulseShapes"):
+            #     print(f"Processing pulse column: {mapping['name']}")
+            #     for i in range(1, 11):
+            #         print("Adding column for pulse shape:", f"{mapping['name']}_{i}")
+            #         columns.append(f"{mapping['name']}_{i}")
+            #     types.extend([mapping["type"]] * 10)
+            #     seen_columns.add(mapping["name"])
+            # else:
                 columns.append(mapping["name"])
                 types.append(mapping["type"])
                 seen_columns.add(mapping["name"])
+
+    # Add the particle parameters & pulseShapes column types
+    columns.extend(particles_colums)
+    types.extend(["[f]"] * len(particles_colums))
 
     print(f"Colonnes ignorées ({len(ignored_columns)}): {ignored_columns[:5]}...")  # Affiche les 5 premières
     print(f"Colonnes valides ({len(valid_columns)}): {len(valid_columns)}")
@@ -502,6 +596,8 @@ def main(input_json, extra_data_file):
 
             files_in_zip.append(pulse_shape_path)
 
+        particle_parameters = build_particles_parameters(channels, particle["parameters"])
+        particle_polynomial_fits = build_polynomial_fits(channels, particle["pulseShapes"])
 
         #TODO: add columns defining polynom coefficents of the pulse shape
         # row.append(polynomial_fits)
@@ -509,8 +605,9 @@ def main(input_json, extra_data_file):
         #TODO: add columns defining polynom coefficents of the pulse shape
         # pulse_data_list = article["pulseShapes"]
         # pulse_data_list = []
-        polynomial_fits = [1,2,3,4,5]
+        # polynomial_fits = [1,2,3,4,5]
         # polynomial_fits = summarize_pulse_numpy(pulse_data_list) # []
+        polynomial_fits = particle_parameters + particle_polynomial_fits
 
         row = make_row(particle, data, image_file, 0, column_mapping, extra_data, polynomial_fits)
         rows.append(row)
