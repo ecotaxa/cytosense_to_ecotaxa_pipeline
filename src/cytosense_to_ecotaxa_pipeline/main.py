@@ -18,7 +18,7 @@ except ImportError:
 
 try:
     # Essayer d'abord l'importation relative (fonctionne lors du développement)
-    from .mapping import column_mapping, particles_parameters
+    from .mapping import column_mapping, particles_parameters, channel_parameters
 except ImportError:
     # Si ça échoue, essayer l'importation absolue (fonctionne après installation)
     from cytosense_to_ecotaxa_pipeline.mapping import column_mapping, particles_parameters
@@ -305,13 +305,18 @@ def gen_bioODV_header_from_mapping(mapping, headers):
             headers.append(row)
     return headers
 
-def make_row(particle, data, image_file, img_rank, column_mapping, extra_data, polynomial_fits=[]):
-    """ Build one TSV row per particle """
-    row = [image_file, img_rank]
+def build_extra_data_array(extra_data):
+    """
+    Build an array of extra data values from the extra_data.json file.
+    """
+    row = []
     for value in extra_data.values():
         val = value['value'] if isinstance(value, dict) and 'value' in value else value
         row.append(format_value(val))
+    return row
 
+def build_mapping_array(data, column_mapping):
+    row =[]
     for key, mapping in column_mapping.items():
         # print("Key:", key)
         # print("Mapping:", mapping)
@@ -324,31 +329,85 @@ def make_row(particle, data, image_file, img_rank, column_mapping, extra_data, p
                 current_obj = data
                 for part in key_parts:
                     star = part.split("*")
-                    bracket = part.split("[")
+                    # bracket = part.split("[")
                     if len(star) > 1: part = star[0]
-                    if len(bracket) > 1: 
-                        part = bracket[0]
-                        if part == "particles":
-                            current_obj = particle
-                    else:
-                        current_obj = current_obj.get(part, {})
+                    # if len(bracket) > 1: 
+                    #     part = bracket[0]
+                    #     if part == "particles":
+                    #         current_obj = particle
+                    # else:
+                    current_obj = current_obj.get(part, {})
+
                 value = current_obj if current_obj != {} else None
             else:
-                value = particle.get(key, None)
+                # value = particle.get(key, None)
+                value = data.get(key, None)
 
             transform = mapping.get("transform")
             if transform:
                 result = transform(value)
-                if isinstance(result, (list, tuple, np.ndarray)):
-                    for v in result:
-                        row.append(format_value(v))
-                else:
+                # if isinstance(result, (list, tuple, np.ndarray)):
+                #     for v in result:
+                #         row.append(format_value(v))
+                # else:
+                if result is not None:
                     row.append(format_value(result))
+                else:
+                    row.append( "NaN" if mapping["type"] == "[f]" else "" )
             else:
                 row.append(format_value(value))
         except Exception:
             # row.append("ERROR")
             row.append( "NaN" if mapping["type"] == "[f]" else "" )
+    return row
+
+# def make_row(particle, data, image_file, img_rank, column_mapping, extra_data, polynomial_fits=[]):
+def make_row(data, image_file, img_rank, extra_data, polynomial_fits=[]):
+    """ Build one TSV row per particle """
+    row = [image_file, img_rank]
+    # for value in extra_data.values():
+    #     val = value['value'] if isinstance(value, dict) and 'value' in value else value
+    #     row.append(format_value(val))
+    row.extend(extra_data)
+
+    # for key, mapping in column_mapping.items():
+    #     # print("Key:", key)
+    #     # print("Mapping:", mapping)
+
+    #     if "name" not in mapping or mapping["name"] is None:
+    #         continue  # Ignore column with undefined name
+    #     try:
+    #         if "." in key:
+    #             key_parts = key.split(".")
+    #             current_obj = data
+    #             for part in key_parts:
+    #                 star = part.split("*")
+    #                 bracket = part.split("[")
+    #                 if len(star) > 1: part = star[0]
+    #                 if len(bracket) > 1: 
+    #                     part = bracket[0]
+    #                     if part == "particles":
+    #                         current_obj = particle
+    #                 else:
+    #                     current_obj = current_obj.get(part, {})
+    #             value = current_obj if current_obj != {} else None
+    #         else:
+    #             value = particle.get(key, None)
+
+    #         transform = mapping.get("transform")
+    #         if transform:
+    #             result = transform(value)
+    #             if isinstance(result, (list, tuple, np.ndarray)):
+    #                 for v in result:
+    #                     row.append(format_value(v))
+    #             else:
+    #                 row.append(format_value(result))
+    #         else:
+    #             row.append(format_value(value))
+    #     except Exception:
+    #         # row.append("ERROR")
+    #         row.append( "NaN" if mapping["type"] == "[f]" else "" )
+    row.extend(data)
 
     row.extend(polynomial_fits)  # Add polynomial fits to the row
     return row
@@ -569,6 +628,9 @@ def main(input_json, extra_data_file):
     rows = []
     files_in_zip = []
 
+    constant_data = build_mapping_array(data, column_mapping)
+    constant_extra_data = build_extra_data_array(extra_data)
+    
     for particle in data["particles"]:
         if not particle["hasImage"]:
             continue  # Ignore particles without image
@@ -593,8 +655,7 @@ def main(input_json, extra_data_file):
             image_data = draw_pulse_shape(pulseShapes, "FWS", pulse_shape_path)
             # img_file.write(image_data)
             files_in_zip.append(pulse_shape_path)
-
-            files_in_zip.append(pulse_shape_path)
+            # files_in_zip.append(pulse_shape_path)
 
         particle_parameters = build_particles_parameters(channels, particle["parameters"])
         particle_polynomial_fits = build_polynomial_fits(channels, particle["pulseShapes"])
@@ -609,9 +670,13 @@ def main(input_json, extra_data_file):
         # polynomial_fits = summarize_pulse_numpy(pulse_data_list) # []
         polynomial_fits = particle_parameters + particle_polynomial_fits
 
-        row = make_row(particle, data, image_file, 0, column_mapping, extra_data, polynomial_fits)
+
+
+        # row = make_row(particle, data, image_file, 0, column_mapping, extra_data, polynomial_fits)
+        row = make_row(constant_data, image_file, 0, constant_extra_data, polynomial_fits)
         rows.append(row)
-        row = make_row(particle, data, pulse_shape_file, 1, column_mapping, extra_data, polynomial_fits)
+        # row = make_row(particle, data, pulse_shape_file, 1, column_mapping, extra_data, polynomial_fits)
+        row = make_row(constant_data, pulse_shape_file, 1, constant_extra_data, polynomial_fits)
         rows.append(row)
 
     print() # to invalid the progress bar

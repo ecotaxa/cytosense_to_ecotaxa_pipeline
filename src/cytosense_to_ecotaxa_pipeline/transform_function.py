@@ -8,8 +8,11 @@ def remove_extension(value):
     """
     Function to remove the extension name from a file name.
     """
+    print(f'remove_extension({value})')
     if value and isinstance(value, str):
+        print(f'{os.path.splitext(value)[0]}')
         return os.path.splitext(value)[0]
+    print("value")
     return value
 
 
@@ -71,3 +74,16 @@ def extract_time_utc(iso_datetime):
 
 #         return None
 #     return search
+
+
+def extract_commit_version(s):
+    """
+    Extrait la version du commit de la chaîne CytoUSB.
+    Exemple : "Commit: CytoUsb-v6.3.2.2-0-g2cf62c7b4" => "CytoUsb-v6.3.2.2-0-g2cf62c7b4"
+    """
+    import re
+    match = re.search(r"Commit:\s*([^\s,]+)", s)
+    if match:
+        return match.group(1)
+    return None
+

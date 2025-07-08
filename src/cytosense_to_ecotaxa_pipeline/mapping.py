@@ -2,7 +2,7 @@
 # from cytosense_to_ecotaxa_pipeline.transform_function import *
 try:
     # Essayer d'abord l'importation relative (fonctionne lors du développement)
-    from .transform_function import remove_extension,extract_date_utc,extract_time_utc,search_pulse_shapes
+    from .transform_function import remove_extension, extract_date_utc, extract_time_utc, extract_commit_version #,search_pulse_shapes
 except ImportError:
     # Si ça échoue, essayer l'importation absolue (fonctionne après installation)
     from cytosense_to_ecotaxa_pipeline.transform_function import *
@@ -60,7 +60,7 @@ column_mapping = {
     "instrument.measurementSettings.CytoSettings.CytoSettings.triggerlevelOffset": { "name": "triggerlevelOffset", "type": "[f]" },
     "instrument.measurementSettings.CytoSettings.CytoSettings.CytoUSBSettings.release.ReleaseDate": { "name": "ReleaseDateDay", "type": "[t]", "transform": extract_date_utc },
     "instrument.measurementSettings.CytoSettings.CytoSettings.CytoUSBSettings.release.ReleaseDate*ReleaseDate": { "name": "ReleaseDateHour", "type": "[t]", "transform": extract_time_utc },
-    "instrument.measurementSettings.CytoSettings.CytoSettings.CytoUSBSettings.CytoUSBVersion": { "name": "CytoUSBVersion", "type": "[t]" },
+    "instrument.measurementSettings.CytoSettings.CytoSettings.CytoUSBSettings.CytoUSBVersion": { "name": "CytoUSBVersion", "type": "[t]", "transform": extract_commit_version },
     "instrument.measurementSettings.CytoSettings.CytoSettings.iif.Gain": { "name": "Gain", "type": "[f]" },
     "instrument.measurementSettings.CytoSettings.CytoSettings.iif.Brightness": { "name": "Brightness", "type": "[f]" },
     "instrument.measurementSettings.CytoSettings.CytoSettings.iif.ROITop": { "name": "ROITop", "type": "[f]" },
@@ -93,10 +93,10 @@ column_mapping = {
     "instrument.measurementSettings.CytoSettings.CytoSettings.iif.AllwaysTakeLargerParticlePictures": { "name": "AllwaysTakeLargerParticlePictures", "type": "[t]", "transform": lambda v: "true" if v else "false" },
     "instrument.measurementSettings.CytoSettings.CytoSettings.EnableCompressIIFImages": { "name": "EnableCompressIIFImages", "type": "[t]", "transform": lambda v: "true" if v else "false" },
     "instrument.measurementSettings.CytoSettings.CytoSettings.EnableSaveUnmatchedIIFFoto": { "name": "EnableSaveUnmatchedIIFFoto", "type": "[t]", "transform": lambda v: "true" if v else "false" },
-    "instrument.measurementSettings.CytoSettings.CytoSettings.channels.IsFilteredLFChannel": { "name": "IsFilteredLFChannel", "type": "[t]", "transform": lambda v: "true" if v else "false" },
-    "instrument.measurementSettings.CytoSettings.CytoSettings.channels.IsHFplusLFchannel": { "name": "IsHFplusLFchannel", "type": "[t]", "transform": lambda v: "true" if v else "false" },
-    "instrument.measurementSettings.CytoSettings.CytoSettings.channels.LF_HardwareChannelIndex": { "name": "LF_HardwareChannelIndex", "type": "[f]" },
-    "instrument.measurementSettings.CytoSettings.CytoSettings.channels.HF_HardwareChannelIndex": { "name": "HF_HardwareChannelIndex", "type": "[f]" },
+    # "instrument.measurementSettings.CytoSettings.CytoSettings.channels.IsFilteredLFChannel": { "name": "IsFilteredLFChannel", "type": "[t]", "transform": lambda v: "true" if v else "false" },
+    # "instrument.measurementSettings.CytoSettings.CytoSettings.channels.IsHFplusLFchannel": { "name": "IsHFplusLFchannel", "type": "[t]", "transform": lambda v: "true" if v else "false" },
+    # "instrument.measurementSettings.CytoSettings.CytoSettings.channels.LF_HardwareChannelIndex": { "name": "LF_HardwareChannelIndex", "type": "[f]" },
+    # "instrument.measurementSettings.CytoSettings.CytoSettings.channels.HF_HardwareChannelIndex": { "name": "HF_HardwareChannelIndex", "type": "[f]" },
     "instrument.measurementSettings.CytoSettings.CytoSettings.Laser1Model": { "name": "Laser1Model", "type": "[f]" },
     "instrument.measurementSettings.CytoSettings.CytoSettings.SubLoopVolume_uL": { "name": "SubLoopVolume_uL", "type": "[f]" },
     "instrument.measurementSettings.CytoSettings.CytoSettings.OpticalMagnification": { "name": "OpticalMagnification", "type": "[f]" },
@@ -264,4 +264,30 @@ particles_parameters = [
     "minimum",
     "swscov",
     "variableLength"
+]
+
+"""Channel parameters"""
+channel_parameters = [
+"hasLowCheck",
+"lowcheck",
+"lowcheckID",
+"name",
+"visible",
+"highsensitivity",
+"color",
+"SyncPulseValue",
+"hasI2CPMTLevel",
+"CytoSenseOpticalUnitProperty",
+"LaserColor",
+"LaserColorName",
+"DualFocus",
+"PMTLevel_id",
+"PMTLevel_min",
+"PMTLevel_max",
+"Channel_Type",
+"Description",
+"IsFilteredLFChannel",
+"IsHFplusLFchannel",
+"LF_HardwareChannelIndex",
+"HF_HardwareChannelIndex"
 ]
