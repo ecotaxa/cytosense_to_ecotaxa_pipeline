@@ -1,5 +1,7 @@
 
 from datetime import datetime
+import numpy as np
+import json, os, sys, shutil, argparse, base64
 
 
 def remove_extension(value):
@@ -36,3 +38,36 @@ def extract_time_utc(iso_datetime):
         return "INVALID_TIME"
 
 
+def summarize_pulse_numpy(pulse_data_list, n_poly=10):
+    """
+    Summarizes a pulse shape using polynomial fitting with NumPy.
+
+    Args:
+        #pulse_data (np.ndarray): 1D NumPy array containing the pulse data.
+        pulse_data (List): array containing the pulse data.
+        n_poly (int): Degree of the polynomial fit.
+
+    Returns:
+        # np.ndarray: 1D NumPy array containing the polynomial coefficients.
+        List: array containing the polynomial coefficients.
+    """
+    pulse_data = np.array(pulse_data_list)
+    n = len(pulse_data)
+    x = np.linspace(1, n, n)  # Create x-values for the fit
+    poly = np.polynomial.polynomial.Polynomial.fit(x, pulse_data, deg=n_poly - 1)
+    coefficients = poly.convert().coef
+    return coefficients.tolist()
+
+def search_pulse_shapes(description):
+    """
+    Then in your mapping you can use it like:
+    {"name": "pulseShape_FWS", "type": "[t]", "transform": search_pulse_shapes("FWS")}
+    """
+    def search(value):
+        result = next((item for item in value if item['description'] == description), None)
+        if result:
+            # return result["values"]
+            return summarize_pulse_numpy(result["values"])
+
+        return None
+    return search
