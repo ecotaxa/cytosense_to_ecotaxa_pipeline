@@ -13,7 +13,7 @@ Be careful, if you relauch the script data will be overwritten.
 
 ## Generate some new columns
 
-I use the python scrypt updarte_tsv.py to add and fill new columns in the csv file.
+I use the python scrypt update_tsv.py to add and fill new columns in the csv file.
 The column "name"  of the ecotaxa column data are determined from "path" column.
 The column "transform" is the column to determine if we need to call some functions to transform raw data. Its value is determine from the column "type".
 I added 3 optional columns for manage the bioODV relation. The column are:
