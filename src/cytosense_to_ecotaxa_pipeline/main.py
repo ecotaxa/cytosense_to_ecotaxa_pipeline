@@ -113,9 +113,27 @@ def search_pulse_shapes2(description, value):
         return result["values"]
     return None
 
+def draw_all_pulses_normalized(pulseShapes, image_path):
+    """
+    Dessine toutes les courbes de pulseShapes sur une même image, normalisées entre 0 et 1.
+    """
+    plt.figure(figsize=(10, 6))
+    for pulse in pulseShapes:
+        values = np.array(pulse["values"])
+        if len(values) == 0:
+            continue
+        # Normalisation entre 0 et 1
+        norm_values = (values - np.min(values)) / (np.max(values) - np.min(values)) if np.max(values) != np.min(values) else values
+        plt.plot(norm_values, label=pulse["description"])
+    plt.title("All pulse shapes (normalized)")
+    plt.xlabel("Time")
+    plt.ylabel("Normalized value")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(image_path)
+    plt.close()
 
-
-def image_particle(particle_data):
+def image_particle2(particle_data):
     max_y = len(particle_data)
     max_x = 50
 
@@ -188,10 +206,6 @@ def draw_pulse_shape(pulse_data, description, image_path, normalize=True):
     plt.savefig(image_path) # Save the figure to the specified path
     plt.close(fig) # Close the figure to free up resources
 
-# --------------------------------------------------------
-# BioODV + EcoTaxa full generation pipeline
-# --------------------------------------------------------
-
 
 
 
@@ -241,6 +255,50 @@ def draw_pulse_shape(pulse_data, description, image_path, normalize=True):
 #         return value
 #     return add
 
+def image_particle(pulse_data):
+    max_y = len(pulse_data)
+    max_x = 50
+
+    a = np.zeros((max_y, max_x), dtype=np.uint8)
+
+    y = 0
+    for pulse_shape in pulse_data:
+        x = 0
+        # print(len(pulse_shape["values"]))
+
+        for value in pulse_shape["values"]:
+            if x >= max_x:
+                break
+
+            # a[y, x] = value
+            a[y, x] = min(max(int(value), 0), 255)  # <-- Correction ici
+            x = x + 1
+
+        y = y + 1
+    
+    # a = np.clip(a, 0, 255)
+    return a
+
+def draw_pulse(pulse_particle, image_path):
+    from PIL import Image
+
+    a = image_particle(pulse_particle)
+    # np.save(f"{output_dir}/{b}-{id}.npy", a)
+
+    # Normalize to 0-1
+    a = (a - np.min(a)) / (np.max(a) - np.min(a))
+
+    a = a * (256 * 256 * 256 - 1)
+
+    red = a // (256**2)
+    green = (a // 256) % 256
+    blue = a % 256
+
+    rgb_image_array = np.stack((red, green, blue), axis=-1)
+
+    # Convert the 3D array into an image using Pillow
+    image = Image.fromarray(np.uint8(rgb_image_array))
+    image.save(image_path)
 
 
 def format_value(value):
@@ -652,8 +710,10 @@ def main(input_json, extra_data_file):
         pulse_shape_file =  f"pulse_shape_{particle_id}.jpg"
         pulse_shape_path = os.path.join(output_images_dir, pulse_shape_file)
         with open(pulse_shape_path, "wb") as img_file:
-            image_data = draw_pulse_shape(pulseShapes, "FWS", pulse_shape_path)
+            # image_data = draw_pulse_shape(pulseShapes, "FWS", pulse_shape_path)
             # img_file.write(image_data)
+            # draw_pulse(pulseShapes, pulse_shape_path)
+            draw_all_pulses_normalized(pulseShapes, pulse_shape_path)
             files_in_zip.append(pulse_shape_path)
             # files_in_zip.append(pulse_shape_path)
 
