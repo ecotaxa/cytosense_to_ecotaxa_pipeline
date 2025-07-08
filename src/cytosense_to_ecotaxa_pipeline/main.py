@@ -90,17 +90,18 @@ bioODVHeader=False
 #     result = search_Pulse_Shapes(value, "FWS")
 #     return result["values"]
 
-def search_pulse_shapes(description):
-    """
-    Then in your mapping you can use it like:
-    {"name": "pulseShape_FWS", "type": "[t]", "transform": search_pulse_shapes("FWS")}
-    """
-    def search(value):
-        result = next((item for item in value if item['description'] == description), None)
-        if result:
-            return result["values"]
-        return None
-    return search
+# moved to .transform_function
+# def search_pulse_shapes(description):
+#     """
+#     Then in your mapping you can use it like:
+#     {"name": "pulseShape_FWS", "type": "[t]", "transform": search_pulse_shapes("FWS")}
+#     """
+#     def search(value):
+#         result = next((item for item in value if item['description'] == description), None)
+#         if result:
+#             return result["values"]
+#         return None
+#     return search
 
 def search_pulse_shapes2(description, value):
     """
@@ -337,8 +338,14 @@ def make_row(particle, data, image_file, img_rank, column_mapping, extra_data, p
 
             transform = mapping.get("transform")
             if transform:
-                value = transform(value)
-            row.append(format_value(value))
+                result = transform(value)
+                if isinstance(result, (list, tuple, np.ndarray)):
+                    for v in result:
+                        row.append(format_value(v))
+                else:
+                    row.append(format_value(result))
+            else:
+                row.append(format_value(value))
         except Exception:
             row.append("ERROR")
     return row
@@ -434,14 +441,33 @@ def main(input_json, extra_data_file):
     types = ["[t]", "[f]"] + ["[t]" if isinstance(val.get('value') if isinstance(val, dict) else val, str) else "[f]" for val in extra_data.values()]
     seen_columns = set(columns)# Avoid duplicates with extra_data
 
+    print(f"Nombre total de clés dans column_mapping: {len(column_mapping)}")
+    
+    ignored_columns = []
+    valid_columns = []
+
     for key, mapping in column_mapping.items():
         if "name" not in mapping or mapping["name"] is None:
+            ignored_columns.append(key)
             continue  # Ignore column where name is undefined
+        else:
+            valid_columns.append(key)
         if mapping["name"] not in seen_columns:
-            columns.append(mapping["name"])
-            types.append(mapping["type"])
-            seen_columns.add(mapping["name"])
+            if mapping["name"].startswith("particles[].pulseShapes"):
+                print(f"Processing pulse column: {mapping['name']}")
+                for i in range(1, 11):
+                    print("Adding column for pulse shape:", f"{mapping['name']}_{i}")
+                    columns.append(f"{mapping['name']}_{i}")
+                types.extend([mapping["type"]] * 10)
+                seen_columns.add(mapping["name"])
+            else:
+                columns.append(mapping["name"])
+                types.append(mapping["type"])
+                seen_columns.add(mapping["name"])
 
+    print(f"Colonnes ignorées ({len(ignored_columns)}): {ignored_columns[:5]}...")  # Affiche les 5 premières
+    print(f"Colonnes valides ({len(valid_columns)}): {len(valid_columns)}")
+    
     # Array to log particles without image
     missing_images = []
 
@@ -474,11 +500,17 @@ def main(input_json, extra_data_file):
             # img_file.write(image_data)
             files_in_zip.append(pulse_shape_path)
 
+            files_in_zip.append(pulse_shape_path)
+
+
         #TODO: add columns defining polynom coefficents of the pulse shape
         # row.append(polynomial_fits)
 
         #TODO: add columns defining polynom coefficents of the pulse shape
-        polynomial_fits = []
+        # pulse_data_list = article["pulseShapes"]
+        # pulse_data_list = []
+        polynomial_fits = [1,2,3,4,5]
+        # polynomial_fits = summarize_pulse_numpy(pulse_data_list) # []
 
         row = make_row(particle, data, image_file, 0, column_mapping, extra_data, polynomial_fits)
         rows.append(row)
