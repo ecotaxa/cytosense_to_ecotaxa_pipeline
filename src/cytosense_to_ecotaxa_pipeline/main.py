@@ -18,10 +18,10 @@ except ImportError:
 
 try:
     # Essayer d'abord l'importation relative (fonctionne lors du développement)
-    from .mapping import column_mapping, particles_parameters, channel_parameters
+    from .mapping import column_mapping, particles_parameters, channel_parameters, particule_features
 except ImportError:
     # Si ça échoue, essayer l'importation absolue (fonctionne après installation)
-    from cytosense_to_ecotaxa_pipeline.mapping import column_mapping, particles_parameters
+    from cytosense_to_ecotaxa_pipeline.mapping import column_mapping, particles_parameters, particule_features
 
 
 
@@ -255,6 +255,10 @@ def draw_pulse_shape(pulse_data, description, image_path, normalize=True):
 #         return value
 #     return add
 
+
+def extract_features(image):
+    return []
+
 def image_particle(pulse_data):
     max_y = len(pulse_data)
     max_x = 50
@@ -420,9 +424,9 @@ def build_mapping_array(data, column_mapping):
     return row
 
 # def make_row(particle, data, image_file, img_rank, column_mapping, extra_data, polynomial_fits=[]):
-def make_row(data, image_file, img_rank, extra_data, polynomial_fits=[]):
+def make_row(data, image_file, img_rank, object_id, features, extra_data, polynomial_fits=[]):
     """ Build one TSV row per particle """
-    row = [image_file, img_rank]
+    row = [image_file, img_rank, object_id]
     # for value in extra_data.values():
     #     val = value['value'] if isinstance(value, dict) and 'value' in value else value
     #     row.append(format_value(val))
@@ -466,6 +470,7 @@ def make_row(data, image_file, img_rank, extra_data, polynomial_fits=[]):
     #         # row.append("ERROR")
     #         row.append( "NaN" if mapping["type"] == "[f]" else "" )
     row.extend(data)
+    row.extend(features)
 
     row.extend(polynomial_fits)  # Add polynomial fits to the row
     return row
@@ -488,7 +493,7 @@ def define_particules_columns(channel:str):
     if channel:
         channel_no_space = channel.replace(" ", "_")
         for particle_feature in particles_parameters:
-            column_name = channel_no_space + "_" + particle_feature
+            column_name = "object_" + channel_no_space + "_" + particle_feature
             columns.append(column_name)
     return columns
 
@@ -509,7 +514,7 @@ def get_particles_columns(channels) -> list:
         print(f"Processing channel: {channel}")
         column_name = f"{channel.replace(' ', '_')}"
         for index in range(1,11):
-            columns.append(f"{column_name}_{index}")
+            columns.append(f"object_{column_name}_{index}")
         particle_columns.extend(columns)
 
     return particle_columns
@@ -640,15 +645,15 @@ def main(input_json, extra_data_file):
     bioODV_header = gen_bioODV_header_from_mapping(column_mapping, bioODV_header)
     bioODV_header = gen_bioODV_header_from_extra(extra_data, bioODV_header)
     # print(bioODV_header)
-    columns = ["img_file_name", "img_rank"] + list(extra_data.keys())  # Add extra data at the begin of the tsv line
-    types = ["[t]", "[f]"] + ["[t]" if isinstance(val.get('value') if isinstance(val, dict) else val, str) else "[f]" for val in extra_data.values()]
+    columns = ["img_file_name", "img_rank", "object_id"] + list(extra_data.keys())  # Add extra data at the begin of the tsv line
+    types = ["[t]", "[f]", "[t]"] + ["[t]" if isinstance(val.get('value') if isinstance(val, dict) else val, str) else "[f]" for val in extra_data.values()]
     seen_columns = set(columns)# Avoid duplicates with extra_data
 
     print(f"Nombre total de clés dans column_mapping: {len(column_mapping)}")
     
     # build the particle parameters columns follow by the p rticle pulseShape columns
     channels = getChannels(data["instrument"]["channels"])
-    particles_colums = get_particles_columns(channels)
+    particles_columns = get_particles_columns(channels)
 
     ignored_columns = []
     valid_columns = []
@@ -672,9 +677,15 @@ def main(input_json, extra_data_file):
                 types.append(mapping["type"])
                 seen_columns.add(mapping["name"])
 
+    # add the features columns
+    for feature in particule_features:
+        if feature not in seen_columns:
+            columns.append("object_" + feature)
+            types.append("[f]")
+
     # Add the particle parameters & pulseShapes column types
-    columns.extend(particles_colums)
-    types.extend(["[f]"] * len(particles_colums))
+    columns.extend(particles_columns)
+    types.extend(["[f]"] * len(particles_columns))
 
     print(f"Colonnes ignorées ({len(ignored_columns)}): {ignored_columns[:5]}...")  # Affiche les 5 premières
     print(f"Colonnes valides ({len(valid_columns)}): {len(valid_columns)}")
@@ -703,6 +714,8 @@ def main(input_json, extra_data_file):
             with open(os.path.join(output_images_dir, image_file), "wb") as img_file:
                 img_file.write(base64.b64decode(image_data))
                 files_in_zip.append(os.path.join(output_images_dir, image_file))
+
+            features = extract_features(image_data)
         else:
             missing_images.append(particle_id)
             continue  # go to next particle
@@ -716,6 +729,8 @@ def main(input_json, extra_data_file):
             draw_all_pulses_normalized(pulseShapes, pulse_shape_path)
             files_in_zip.append(pulse_shape_path)
             # files_in_zip.append(pulse_shape_path)
+
+        features_pulse_shapes = [0] * len(particule_features)
 
         particle_parameters = build_particles_parameters(channels, particle["parameters"])
         particle_polynomial_fits = build_polynomial_fits(channels, particle["pulseShapes"])
@@ -733,10 +748,10 @@ def main(input_json, extra_data_file):
 
 
         # row = make_row(particle, data, image_file, 0, column_mapping, extra_data, polynomial_fits)
-        row = make_row(constant_data, image_file, 0, constant_extra_data, polynomial_fits)
+        row = make_row(constant_data, image_file, 0, particle_id, features, constant_extra_data, polynomial_fits)
         rows.append(row)
         # row = make_row(particle, data, pulse_shape_file, 1, column_mapping, extra_data, polynomial_fits)
-        row = make_row(constant_data, pulse_shape_file, 1, constant_extra_data, polynomial_fits)
+        row = make_row(constant_data, pulse_shape_file, 1, particle_id, features_pulse_shapes, constant_extra_data, polynomial_fits)
         rows.append(row)
 
     print() # to invalid the progress bar
